@@ -13,5 +13,5 @@ export function signToken(payload: IPayload): string {
 }
 
 export function verifyToken(token: string) {
-  return jwt.verify(token, secret);
+  return jwt.verify(token, secret) as IPayload;
 }
