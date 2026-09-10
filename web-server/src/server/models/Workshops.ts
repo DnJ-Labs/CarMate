@@ -43,7 +43,7 @@ export const bengkelSchema = z.object({
   is_active: z.boolean(),
 });
 
-export default class Bengkel extends Model<IWorkshop> {
+export default class Workshop extends Model<IWorkshop> {
   public static $schema: IWorkshop;
   public $collection: string = "workshops";
 }
