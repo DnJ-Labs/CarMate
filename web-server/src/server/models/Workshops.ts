@@ -12,7 +12,8 @@ export interface IOperationalHour {
   close: string;
 }
 
-export interface IBengkel extends IMongoloquentSchema, IMongoloquentTimestamps {
+export interface IWorkshop
+  extends IMongoloquentSchema, IMongoloquentTimestamps {
   adminId: string;
   name: string;
   address: string;
@@ -42,7 +43,7 @@ export const bengkelSchema = z.object({
   is_active: z.boolean(),
 });
 
-export default class Bengkel extends Model<IBengkel> {
-  public static $schema: IBengkel;
-  public $collection: string = "bengkels";
+export default class Workshop extends Model<IWorkshop> {
+  public static $schema: IWorkshop;
+  public $collection: string = "workshops";
 }
