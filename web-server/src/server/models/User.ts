@@ -8,6 +8,7 @@ import * as z from "zod";
 
 export interface IUser extends IMongoloquentSchema, IMongoloquentTimestamps {
   name: string;
+  username: string;
   email: string;
   phone: string;
   password: string;

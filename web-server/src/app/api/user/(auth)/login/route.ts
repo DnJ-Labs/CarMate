@@ -14,16 +14,16 @@ export async function POST(request: Request) {
     if (!body.email) throw new BadRequestError("email is required");
     if (!body.password) throw new BadRequestError("password is required");
 
-    const admin = await User.where("email", body.email).first();
-    if (!admin) throw new UnauthorizedError("Invalid email or password");
+    const user = await User.where("email", body.email).first();
+    if (!user) throw new UnauthorizedError("Invalid email or password");
 
-    const isPasswordValid = comparePassword(body.password, admin.password);
+    const isPasswordValid = comparePassword(body.password, user.password);
     if (!isPasswordValid)
       throw new UnauthorizedError("Invalid email or password");
 
     const payload = {
-      _id: admin._id,
-      email: admin.email,
+      _id: user._id,
+      email: user.email,
     };
 
     const token = signToken(payload);
