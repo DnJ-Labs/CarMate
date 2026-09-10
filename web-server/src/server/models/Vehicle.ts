@@ -1,0 +1,26 @@
+import {
+  Model,
+  IMongoloquentSchema,
+  IMongoloquentTimestamps,
+} from "@mongoloquent/core";
+
+import * as z from "zod";
+
+export interface IVehicle extends IMongoloquentSchema, IMongoloquentTimestamps {
+  user_id: string;
+  brand: string;
+  model: string;
+  plate_number: string;
+}
+
+export const vehicleSchema = z.object({
+  user_id: z.string().min(1, "User id is required"),
+  brand: z.string().min(1, "Brand is required"),
+  model: z.string().min(1, "Model is required"),
+  plate_number: z.string().min(1, "Plate number is required"),
+});
+
+export default class Vehicle extends Model<IVehicle> {
+  public static $schema: IVehicle;
+  public $collection: string = "vehicles";
+}
