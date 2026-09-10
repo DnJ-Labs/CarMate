@@ -12,11 +12,18 @@ export interface IUser extends IMongoloquentSchema, IMongoloquentTimestamps {
   phone: string;
   password: string;
   fcm_tokens: string[];
+  location: {
+    type: string;
+    coordinates: [number, number];
+  };
 }
 
 export const userSchema = z.object({
   name: z.string().min(3, "Name must be at least 3 characters"),
-  phone: z.number(),
+  phone: z
+    .string()
+    .min(9, "Phone number is too short")
+    .max(15, "Phone number is too long"),
   username: z.string().min(3, "Username must be at least 3 characters"),
   email: z.email("Invalid email format"),
   password: z

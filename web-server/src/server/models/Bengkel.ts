@@ -16,8 +16,10 @@ export interface IBengkel extends IMongoloquentSchema, IMongoloquentTimestamps {
   adminId: string;
   name: string;
   address: string;
-  location_lat: number;
-  location_lng: number;
+  location: {
+    type: string;
+    coordinates: [number, number];
+  };
   operational_hours: IOperationalHour[];
   max_slot_per_day: number;
   is_active: boolean;
