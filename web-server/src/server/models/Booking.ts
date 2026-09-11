@@ -40,7 +40,6 @@ export const serviceDoneSchema = z.object({
 
 export const bookingStatusEnum = z.enum([
   "pending",
-  "confirmed",
   "checked_in",
   "onprogress",
   "done",

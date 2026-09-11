@@ -8,7 +8,7 @@ import Admin from "./server/models/Admin";
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
-  if (path.startsWith("/api/workshop")) {
+  if (path.startsWith("/api/workshop") || path.startsWith("/api/vehicles")) {
     try {
       const cookieStore = await cookies();
 
