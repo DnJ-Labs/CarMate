@@ -1,12 +1,13 @@
 import { errorHandler } from "@/server/helpers/errorHandler";
 import Workshop, { IWorkshop } from "@/server/models/Workshops";
 
-export async function GET(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+interface ICtx {
+  params: Promise<{ id: string }>;
+}
+
+export async function GET( request: Request, ctx: ICtx ) {
   try {
-    const { id } = await params;
+    const { id } = await ctx.params;
 
     const workshop = await Workshop.where("_id", id).first();
 
@@ -15,7 +16,26 @@ export async function GET(
     });
   } catch (error: unknown) {
     const { message, status } = errorHandler(error);
-
     return Response.json({ message }, { status });
+  }
+}
+
+export async function PUT(request: Request, ctx: ICtx) {
+  try {
+    
+  } catch (error: unknown) {
+    const { message, status } = errorHandler(error);
+    return Response.json({ message }, { status });
+    
+  }
+}
+
+export async function DELETE(request: Request, ctx: ICtx) {
+  try {
+    
+  } catch (error: unknown) {
+    const { message, status } = errorHandler(error);
+    return Response.json({ message }, { status });
+    
   }
 }
