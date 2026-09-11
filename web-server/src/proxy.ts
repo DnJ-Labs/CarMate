@@ -34,18 +34,28 @@ export async function proxy(request: NextRequest) {
 
       const payload = verifyToken(token);
 
-      const user =
-        (await User.where("_id", payload._id).first()) ||
-        (await Admin.where("_id", payload._id).first());
+      const user = await User.where("_id", payload._id).first()
+      const admin = await Admin.where("_id", payload._id).first()
 
-      if (!user) {
+      if (!user && !admin) {
         throw new UnauthorizedError("User not found");
       }
 
+      const account = user || admin
+      if(!account) {
+        throw new UnauthorizedError("User not found")
+      }
+      const role = admin? "admin" : "user"
+
       const requestHeaders = new Headers(request.headers);
 
-      requestHeaders.set("x-user-id", user._id.toString());
-      requestHeaders.set("x-user-email", user.email);
+      requestHeaders.set("x-user-id", account._id.toString());
+      requestHeaders.set("x-user-email", account.email);
+      requestHeaders.set("x-user-role", role);
+
+      if(path.startsWith("/api/workshop") && ["POST", "PUT", "DELETE"].includes(request.method) && role !== "admin"){
+        throw new UnauthorizedError("Admin access required")
+      }
 
       return NextResponse.next({
         request: {
