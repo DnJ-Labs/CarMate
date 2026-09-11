@@ -56,10 +56,11 @@ export async function PUT(request: Request, ctx: ICtx) {
         is_active: validated.is_active,
       });
 
-      const updatedWorkshop: IWorkshop | null = await Workshop.where("_id", id).where("adminId", adminId).first()
+    const updatedWorkshop: IWorkshop | null = await Workshop.where("_id", id)
+      .where("adminId", adminId)
+      .first();
 
-      return Response.json(updatedWorkshop, {status: 200})
-
+    return Response.json(updatedWorkshop, { status: 200 });
   } catch (error: unknown) {
     const { message, status } = errorHandler(error);
     return Response.json({ message }, { status });
@@ -68,6 +69,19 @@ export async function PUT(request: Request, ctx: ICtx) {
 
 export async function DELETE(request: Request, ctx: ICtx) {
   try {
+    const { id } = await ctx.params;
+    const adminId = request.headers.get("x-user-id");
+    const deleteWorkshop = await Workshop.where("_id", id)
+      .where("adminId", adminId)
+      .delete();
+    if (!deleteWorkshop) {
+      throw new BadRequestError("Workshop not found");
+    }
+
+    return Response.json(
+      { message: "Success delete workshop" },
+      { status: 200 },
+    );
   } catch (error: unknown) {
     const { message, status } = errorHandler(error);
     return Response.json({ message }, { status });
