@@ -15,7 +15,8 @@ export async function proxy(request: NextRequest) {
   if (
     path.startsWith("/api/workshop") ||
     path.startsWith("/api/vehicles") ||
-    path.startsWith("/api/bookings")
+    path.startsWith("/api/bookings") ||
+    path.startsWith("/api/payment")
   ) {
     try {
       const cookieStore = await cookies();
