@@ -9,6 +9,8 @@ import Booking, {
 import Workshop, { IWorkshop } from "@/server/models/Workshops";
 import * as z from "zod";
 
+export const dynamic = "force-dynamic";
+
 interface ICtx {
   params: Promise<{ id: string }>;
 }
@@ -41,8 +43,6 @@ export async function GET(request: Request, ctx: ICtx) {
   }
 }
 
-export const dynamic = "force-dynamic";
-
 const patchStatusEnum = z.enum([
   "checked_in",
   "onprogress",
@@ -53,7 +53,7 @@ const patchStatusEnum = z.enum([
 const patchBookingSchema = z
   .object({
     status: patchStatusEnum.optional(),
-    services_done: z.array(serviceDoneSchema).optional(),
+    services: z.array(serviceDoneSchema).optional(),
     pending_tasks: z.array(z.string()).optional(),
     report_pdf_url: z.url("Invalid URL format").optional(),
   })
@@ -103,17 +103,50 @@ export async function PATCH(
           `Cannot change status from "${booking.status}" to "${validated.status}"`,
         );
       }
+
+      if (validated.status === "onprogress") {
+        // hanya boleh kirim status + services
+        const allowedKeys = new Set(["status", "services"]);
+        const sentKeys = Object.keys(validated);
+        const hasDisallowedField = sentKeys.some((k) => !allowedKeys.has(k));
+
+        if (hasDisallowedField) {
+          throw new BadRequestError(
+            'Saat mengubah status ke "onprogress", hanya boleh mengirim "status" dan "services" (tidak boleh ada "pending_tasks" atau "report_pdf_url")',
+          );
+        }
+
+        if (!validated.services || validated.services.length === 0) {
+          throw new BadRequestError(
+            "services wajib diisi saat mengubah status ke onprogress",
+          );
+        }
+      }
+
+      // status "done": bebas kirim services (akan digabung dengan yang lama),
+      // pending_tasks, dan report_pdf_url — semua opsional
     }
 
     const updatePayload: Partial<IBooking> = {};
 
-    if (validated.services_done) {
-      updatePayload.services_done = validated.services_done;
-      updatePayload.total_price = validated.services_done.reduce(
+    if (validated.services) {
+      if (validated.status === "done") {
+        // gabung dengan services yang sudah ada di booking
+        updatePayload.services = [
+          ...(booking.services ?? []),
+          ...validated.services,
+        ];
+      } else {
+        // onprogress (atau update tanpa perubahan status): replace langsung
+        updatePayload.services = validated.services;
+      }
+
+      updatePayload.total_price = updatePayload.services.reduce(
         (sum, s) => sum + s.price,
         0,
       );
     }
+
     if (validated.pending_tasks) {
       updatePayload.pending_tasks = validated.pending_tasks;
     }
@@ -124,21 +157,13 @@ export async function PATCH(
       updatePayload.status = validated.status;
     }
 
-    const finalServicesDone =
-      updatePayload.services_done ?? booking.services_done ?? [];
-    if (validated.status === "onprogress" && finalServicesDone.length === 0) {
-      throw new BadRequestError(
-        "Cannot move to onprogress without recording services_done first",
-      );
-    }
-
     await Booking.where("_id", id).update(updatePayload);
 
     const updatedBooking = (await Booking.find(
       id,
     )) as unknown as IBooking | null;
 
-    return Response.json("update booking succeed", { status: 200 });
+    return Response.json(updatedBooking, { status: 200 });
   } catch (error: unknown) {
     const { message, status } = errorHandler(error);
     return Response.json({ message }, { status });
