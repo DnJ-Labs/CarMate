@@ -9,7 +9,14 @@ interface ICtx {
 export async function GET(request: Request, ctx: ICtx) {
   try {
     const { id } = await ctx.params;
-    const vehicle: IVehicle | null = await Vehicle.where("_id", id).first();
+    const userId = request.headers.get("x-user-id");
+    if (!userId) {
+      throw new BadRequestError("userId is required");
+    }
+
+    const vehicle: IVehicle | null = await Vehicle.where("_id", id)
+      .where("user_id", userId)
+      .first();
     if (!vehicle) {
       throw new BadRequestError("Vehicle not found");
     }

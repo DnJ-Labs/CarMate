@@ -73,13 +73,18 @@ export async function GET(request: Request) {
             }
 
             const booking = await Booking.where("booking_code", bookingCode).first()
-            if(!bookingCode){
+            if(!booking){
                 throw new BadRequestError("Booking not found")
             }
             return Response.json(booking, {status: 200})
         }
 
-        const bookings = await Booking.where("user_id", userId).get()
+        let bookings
+        if(role === "admin"){
+            bookings = await Booking.get()
+        }else {
+            bookings = await Booking.where("user_id", userId).get()
+        }
         
         return Response.json(bookings, {status: 200})
     } catch (error: unknown) {

@@ -4,10 +4,10 @@ import Vehicle, { IVehicle, vehicleSchema } from "@/server/models/Vehicle";
 
 export async function GET(request: Request) {
   try {
-    const userId = request.headers.get("x-user-id")
-    if(!userId){
-            throw new BadRequestError("User Id is required")
-        }
+    const userId = request.headers.get("x-user-id");
+    if (!userId) {
+      throw new BadRequestError("User Id is required");
+    }
 
     const vehicles: IVehicle[] = await Vehicle.where("user_id", userId).get();
     return Response.json(vehicles, {
@@ -26,7 +26,7 @@ export async function POST(request: Request) {
       throw new BadRequestError("User id is required");
     }
     const body = await request.json();
-    const validated = vehicleSchema.parse({...body, user_id: userId});
+    const validated = vehicleSchema.parse({ ...body, user_id: userId });
     const vehicle = await Vehicle.insert({
       user_id: userId,
       brand: validated.brand,

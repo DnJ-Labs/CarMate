@@ -1,6 +1,6 @@
 import { BadRequestError } from "@/server/helpers/customError";
 import { errorHandler } from "@/server/helpers/errorHandler";
-import Booking, { IBooking } from "@/server/models/Booking";
+import Booking, { bookingStatusEnum, IBooking } from "@/server/models/Booking";
 
 interface ICtx {
   params: Promise<{ id: string }>;
@@ -28,6 +28,36 @@ export async function GET(request: Request, ctx: ICtx) {
         }
 
         return Response.json(booking, {status: 200})
+    } catch (error: unknown) {
+        const { message, status } = errorHandler(error);
+        return Response.json({ message }, { status });
+        
+    }
+}
+
+export async function PATCH(request: Request, ctx: ICtx){
+    try {
+        const {id} = await ctx.params
+
+        const role = await request.headers.get("x-user-role")
+        if(role !== "admin"){
+            throw new BadRequestError("Admin access required")
+        }
+
+        const body = await request.json()
+        const status = bookingStatusEnum.parse(body.status)
+        const booking = await Booking.where("_id", id).first()
+
+        if(!booking){
+            throw new BadRequestError("Booking not found")
+        }
+
+        await Booking.where("_id", id).update({status})
+
+        const updatedBooking = await Booking.where("_id", id).first()
+
+        return Response.json(updatedBooking, {status: 200})
+
     } catch (error: unknown) {
         const { message, status } = errorHandler(error);
         return Response.json({ message }, { status });
