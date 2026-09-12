@@ -26,7 +26,7 @@ export interface IBooking extends IMongoloquentSchema, IMongoloquentTimestamps {
   booking_date: Date;
   booking_time_slot: string;
   status: BookingStatus;
-  services_done?: IServiceDone[];
+  services?: IServiceDone[];
   total_price?: number | null;
   pending_tasks?: string[];
   notes?: string;
