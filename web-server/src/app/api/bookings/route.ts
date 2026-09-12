@@ -1,95 +1,136 @@
-import { BadRequestError } from "@/server/helpers/customError";
 import { errorHandler } from "@/server/helpers/errorHandler";
-import Booking, { bookingSchema } from "@/server/models/Booking";
+import { BadRequestError } from "@/server/helpers/customError";
+import Booking, { createBookingSchema } from "@/server/models/Booking";
+import Workshop, {
+  IWorkshop,
+  IOperationalHour,
+} from "@/server/models/Workshops";
 import Vehicle from "@/server/models/Vehicle";
-import Workshop from "@/server/models/Workshops";
 
+export const dynamic = "force-dynamic";
+
+function generateBookingCode() {
+  const datePart = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
+  return `BK-${datePart}-${randomPart}`;
+}
+
+function getDayName(date: Date): string {
+  const days = [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
+  ];
+  return days[date.getUTCDay()];
+}
+
+function timeToMinutes(time: string): number {
+  const [h, m] = time.split(":").map(Number);
+  return h * 60 + m;
+}
 
 export async function POST(request: Request) {
-    try {
-        const userId = request.headers.get("x-user-id")
-        if(!userId){
-            throw new BadRequestError("User id is required")
-        }
+  try {
+    const userId = request.headers.get("x-user-id");
+    if (!userId) throw new BadRequestError("Missing authenticated user");
 
-        const body = await request.json()
-        const vehicle = await Vehicle.where("_id", body.vehicle_id).where("user_id", userId).first()
+    const body = await request.json();
+    const validated = createBookingSchema.parse(body);
 
-        if(!vehicle){
-            throw new BadRequestError("Vehicle not found")
-        }
+    const vehicle = await Vehicle.where("_id", validated.vehicle_id)
+      .where("user_id", userId)
+      .first();
+    if (!vehicle) throw new BadRequestError("Vehicle not found");
 
-        const workshop = await Workshop.where("_id", body.bengkel_id).where("is_active", true).first()
+    const bookingDate = new Date(validated.booking_date);
+    bookingDate.setUTCHours(0, 0, 0, 0);
 
-        if(!workshop){
-            throw new BadRequestError("Workshop not found")
-        }
-
-        const bookingCode = `CM-${Date.now()}`
-        const validated = bookingSchema.parse({
-            ...body,
-            booking_code: bookingCode,
-            user_id: userId,
-            status: "pending"
-        })      
-        
-        const booking = await Booking.insert({
-            booking_code: validated.booking_code,
-            user_id: validated.user_id,
-            bengkel_id: validated.bengkel_id,
-            vehicle_id: validated.vehicle_id,
-            booking_date: validated.booking_date,
-            booking_time_slot: validated.booking_time_slot,
-            status: validated.status,
-            services_done: validated.services_done,
-            total_price: validated.total_price,
-            pending_tasks: validated.pending_tasks,
-            notes: validated.notes,
-            report_pdf_url: validated.report_pdf_url
-        })
-
-        return Response.json(booking, {status: 201})
-    } catch (error: unknown) {
-        const { message, status } = errorHandler(error);
-    
-        return Response.json({ message }, { status });
+    const workshop = (await Workshop.find(
+      validated.bengkel_id,
+    )) as unknown as IWorkshop | null;
+    if (!workshop) throw new BadRequestError("Bengkel not found");
+    if (!workshop.is_active) {
+      throw new BadRequestError("Bengkel is not accepting bookings right now");
     }
+
+    const dayName = getDayName(bookingDate);
+    const todayHours = workshop.operational_hours.find(
+      (oh: IOperationalHour) => oh.day.toLowerCase() === dayName,
+    );
+    if (!todayHours) {
+      throw new BadRequestError("Bengkel is closed on the selected day");
+    }
+
+    const slotMinutes = timeToMinutes(validated.booking_time_slot);
+    const openMinutes = timeToMinutes(todayHours.open);
+    const closeMinutes = timeToMinutes(todayHours.close);
+
+    if (slotMinutes < openMinutes || slotMinutes > closeMinutes) {
+      throw new BadRequestError(
+        `Selected time is outside operational hours (${todayHours.open}-${todayHours.close})`,
+      );
+    }
+
+    const bookingCountToday = await Booking.where(
+      "bengkel_id",
+      validated.bengkel_id,
+    )
+      .where("booking_date", bookingDate)
+      .whereNotIn("status", ["cancelled"])
+      .count();
+
+    if (bookingCountToday >= workshop.max_slot_per_day) {
+      throw new BadRequestError("No available slot for the selected date");
+    }
+
+    const booking = await Booking.insert({
+      ...validated,
+      user_id: userId,
+      booking_date: bookingDate,
+      booking_code: generateBookingCode(),
+      status: "confirmed",
+    });
+
+    return Response.json(booking, { status: 201 });
+  } catch (error: unknown) {
+    const { message, status } = errorHandler(error);
+    return Response.json({ message }, { status });
+  }
 }
 
 export async function GET(request: Request) {
-    try {
-        const userId = request.headers.get("x-user-id")
-        const role = request.headers.get("x-user-role")
-        if(!userId){
-            throw new BadRequestError("User Id is required")
-        }
+  try {
+    const userId = request.headers.get("x-user-id");
+    const role = request.headers.get("x-user-role");
+    if (!userId) throw new BadRequestError("User Id is required");
 
-        const {searchParams} = new URL(request.url)
-        const bookingCode = searchParams.get("booking_code")
+    const { searchParams } = new URL(request.url);
+    const bookingCode = searchParams.get("booking_code");
 
-        if(bookingCode){
-            if(role !== "admin"){
-                throw new BadRequestError("Admin access required")
-            }
+    if (bookingCode) {
+      const query = Booking.where("booking_code", bookingCode);
+      if (role !== "admin") {
+        query.where("user_id", userId);
+      }
 
-            const booking = await Booking.where("booking_code", bookingCode).first()
-            if(!booking){
-                throw new BadRequestError("Booking not found")
-            }
-            return Response.json(booking, {status: 200})
-        }
+      const booking = await query.first();
+      if (!booking) throw new BadRequestError("Booking not found");
 
-        let bookings
-        if(role === "admin"){
-            bookings = await Booking.get()
-        }else {
-            bookings = await Booking.where("user_id", userId).get()
-        }
-        
-        return Response.json(bookings, {status: 200})
-    } catch (error: unknown) {
-        const { message, status } = errorHandler(error);
-    
-        return Response.json({ message }, { status });
+      return Response.json(booking, { status: 200 });
     }
-}7
+
+    const bookings =
+      role === "admin"
+        ? await Booking.get()
+        : await Booking.where("user_id", userId).get();
+
+    return Response.json(bookings, { status: 200 });
+  } catch (error: unknown) {
+    const { message, status } = errorHandler(error);
+    return Response.json({ message }, { status });
+  }
+}

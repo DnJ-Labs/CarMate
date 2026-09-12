@@ -7,7 +7,7 @@ import {
 import * as z from "zod";
 
 export type BookingStatus =
-  | "pending"
+  | "confirmed"
   | "checked_in"
   | "onprogress"
   | "done"
@@ -39,7 +39,7 @@ export const serviceDoneSchema = z.object({
 });
 
 export const bookingStatusEnum = z.enum([
-  "pending",
+  "confirmed",
   "checked_in",
   "onprogress",
   "done",
@@ -52,13 +52,23 @@ export const bookingSchema = z.object({
   bengkel_id: z.string().min(1, "Bengkel id is required"),
   vehicle_id: z.string().min(1, "Vehicle id is required"),
   booking_date: z.coerce.date(),
-  booking_time_slot: z.string().min(1, "Booking time slot is required"),
-  status: bookingStatusEnum.default("pending"),
+  booking_time_slot: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Format harus HH:mm"),
+  status: bookingStatusEnum.default("confirmed"),
   services_done: z.array(serviceDoneSchema).optional(),
   total_price: z.number().nonnegative().nullable().optional(),
   pending_tasks: z.array(z.string()).optional(),
   notes: z.string().optional(),
   report_pdf_url: z.url("Invalid URL format").optional(),
+});
+
+export const createBookingSchema = bookingSchema.pick({
+  bengkel_id: true,
+  vehicle_id: true,
+  booking_date: true,
+  booking_time_slot: true,
+  notes: true,
 });
 
 export default class Booking extends Model<IBooking> {
