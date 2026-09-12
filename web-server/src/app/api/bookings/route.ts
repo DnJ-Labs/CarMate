@@ -53,6 +53,22 @@ export async function POST(request: Request) {
         const { message, status } = errorHandler(error);
     
         return Response.json({ message }, { status });
+    }
+}
+
+export async function GET(request: Request) {
+    try {
+        const userId = request.headers.get("x-user-id")
+        if(!userId){
+            throw new BadRequestError("User Id is required")
+        }
+
+        const bookings = await Booking.where("user_id", userId).get()
         
+        return Response.json(bookings, {status: 200})
+    } catch (error: unknown) {
+        const { message, status } = errorHandler(error);
+    
+        return Response.json({ message }, { status });
     }
 }
