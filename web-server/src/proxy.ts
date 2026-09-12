@@ -1,3 +1,7 @@
+import dns from "node:dns";
+
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
+
 import { NextRequest, NextResponse } from "next/server";
 import { UnauthorizedError } from "./server/helpers/customError";
 import { verifyToken } from "./server/helpers/jwt";
@@ -8,7 +12,11 @@ import Admin from "./server/models/Admin";
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
-  if (path.startsWith("/api/workshop") || path.startsWith("/api/vehicles")) {
+  if (
+    path.startsWith("/api/workshop") ||
+    path.startsWith("/api/vehicles") ||
+    path.startsWith("/api/bookings")
+  ) {
     try {
       const cookieStore = await cookies();
 
@@ -34,18 +42,18 @@ export async function proxy(request: NextRequest) {
 
       const payload = verifyToken(token);
 
-      const user = await User.where("_id", payload._id).first()
-      const admin = await Admin.where("_id", payload._id).first()
+      const user = await User.where("_id", payload._id).first();
+      const admin = await Admin.where("_id", payload._id).first();
 
       if (!user && !admin) {
         throw new UnauthorizedError("User not found");
       }
 
-      const account = user || admin
-      if(!account) {
-        throw new UnauthorizedError("User not found")
+      const account = user || admin;
+      if (!account) {
+        throw new UnauthorizedError("User not found");
       }
-      const role = admin? "admin" : "user"
+      const role = admin ? "admin" : "user";
 
       const requestHeaders = new Headers(request.headers);
 
@@ -53,8 +61,12 @@ export async function proxy(request: NextRequest) {
       requestHeaders.set("x-user-email", account.email);
       requestHeaders.set("x-user-role", role);
 
-      if(path.startsWith("/api/workshop") && ["POST", "PUT", "DELETE"].includes(request.method) && role !== "admin"){
-        throw new UnauthorizedError("Admin access required")
+      if (
+        path.startsWith("/api/workshop") &&
+        ["POST", "PUT", "DELETE"].includes(request.method) &&
+        role !== "admin"
+      ) {
+        throw new UnauthorizedError("Admin access required");
       }
 
       return NextResponse.next({
