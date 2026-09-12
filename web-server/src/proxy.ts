@@ -1,3 +1,7 @@
+import dns from "node:dns";
+
+dns.setServers(["8.8.8.8", "1.1.1.1"]);
+
 import { NextRequest, NextResponse } from "next/server";
 import { UnauthorizedError } from "./server/helpers/customError";
 import { verifyToken } from "./server/helpers/jwt";
