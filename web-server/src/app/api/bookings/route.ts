@@ -59,8 +59,24 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
     try {
         const userId = request.headers.get("x-user-id")
+        const role = request.headers.get("x-user-role")
         if(!userId){
             throw new BadRequestError("User Id is required")
+        }
+
+        const {searchParams} = new URL(request.url)
+        const bookingCode = searchParams.get("booking_code")
+
+        if(bookingCode){
+            if(role !== "admin"){
+                throw new BadRequestError("Admin access required")
+            }
+
+            const booking = await Booking.where("booking_code", bookingCode).first()
+            if(!bookingCode){
+                throw new BadRequestError("Booking not found")
+            }
+            return Response.json(booking, {status: 200})
         }
 
         const bookings = await Booking.where("user_id", userId).get()
@@ -71,4 +87,4 @@ export async function GET(request: Request) {
     
         return Response.json({ message }, { status });
     }
-}
+}7
