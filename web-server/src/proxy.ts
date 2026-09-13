@@ -16,7 +16,9 @@ export async function proxy(request: NextRequest) {
     path.startsWith("/api/workshop") ||
     path.startsWith("/api/vehicles") ||
     path.startsWith("/api/bookings") ||
-    path.startsWith("/api/payment")
+    path.startsWith("/api/payment") ||
+    path.startsWith("/api/user/fcm-token") ||
+    path.startsWith("/api/user/location")
   ) {
     try {
       const cookieStore = await cookies();
