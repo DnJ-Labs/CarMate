@@ -30,7 +30,6 @@ export interface IBooking extends IMongoloquentSchema, IMongoloquentTimestamps {
   total_price?: number | null;
   pending_tasks?: string[];
   notes?: string;
-  report_pdf_url?: string;
 }
 
 export const serviceDoneSchema = z.object({
@@ -60,7 +59,6 @@ export const bookingSchema = z.object({
   total_price: z.number().nonnegative().nullable().optional(),
   pending_tasks: z.array(z.string()).optional(),
   notes: z.string().optional(),
-  report_pdf_url: z.url("Invalid URL format").optional(),
 });
 
 export const createBookingSchema = bookingSchema.pick({

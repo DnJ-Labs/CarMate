@@ -65,12 +65,12 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const adminId = request.headers.get("x-user-id")
-    if(!adminId){
-      throw new BadRequestError("Admin id is required")
+    const adminId = request.headers.get("x-user-id");
+    if (!adminId) {
+      throw new BadRequestError("Admin id is required");
     }
 
-    const validated = bengkelSchema.parse({...body, adminId});
+    const validated = bengkelSchema.parse({ ...body, adminId });
 
     const workshop = await Workshop.insert({
       adminId: adminId,

@@ -126,3 +126,38 @@ export async function POST(
     return Response.json({ message }, { status });
   }
 }
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    const { id: bookingId } = await params;
+
+    const userId = request.headers.get("x-user-id");
+    if (!userId) throw new BadRequestError("Missing authenticated user");
+
+    const booking = (await Booking.find(
+      bookingId,
+    )) as unknown as IBooking | null;
+
+    if (!booking) throw new BadRequestError("Booking not found");
+    if (booking.user_id !== userId) {
+      throw new BadRequestError("This booking does not belong to you");
+    }
+
+    const payment = (await Payment.where(
+      "booking_id",
+      bookingId,
+    ).first()) as unknown as IPayment | null;
+
+    if (!payment) {
+      throw new BadRequestError("No payment found for this booking");
+    }
+
+    return Response.json(payment, { status: 200 });
+  } catch (error: unknown) {
+    const { message, status } = errorHandler(error);
+    return Response.json({ message }, { status });
+  }
+}
