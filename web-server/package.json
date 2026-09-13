@@ -6,30 +6,38 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "socket": "tsx src/socket/server.ts",
     "lint": "eslint"
   },
   "dependencies": {
     "@mongoloquent/core": "^4.0.2",
     "@types/jsonwebtoken": "^9.0.10",
+    "@types/nodemailer": "^8.0.1",
     "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
     "jsonwebtoken": "^9.0.3",
     "midtrans-client": "^1.4.3",
     "mongodb": "^6.21.0",
     "next": "16.3.4",
+    "nodemailer": "^10.0.9",
+    "pdfkit": "^0.20.2",
     "react": "19.2.8",
     "react-dom": "19.2.8",
+    "socket.io": "^4.8.3",
     "zod": "^4.6.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/midtrans-client": "^1.4.0",
     "@types/node": "^20",
+    "@types/pdfkit": "^0.17.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.3.4",
     "tailwindcss": "^4",
+    "tsx": "^4.23.13",
     "typescript": "^5"
   }
 }
