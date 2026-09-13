@@ -5,6 +5,7 @@ import Vehicle, { IVehicle } from "@/server/models/Vehicle";
 import Workshop, { IWorkshop } from "@/server/models/Workshops";
 import { BadRequestError } from "@/server/helpers/customError";
 import { errorHandler } from "@/server/helpers/errorHandler";
+import transporter from "@/server/helpers/mailer";
 
 interface IContext {
   params: Promise<{ id: string }>;
@@ -35,6 +36,11 @@ export async function GET(request: Request, ctx: IContext) {
       throw new BadRequestError("Booking not found");
     }
 
+    if (booking.status !== "done") {
+      throw new BadRequestError(
+        "Service report can only be generated when booking is done",
+      );
+    }
     // =========================
     // GET USER
     // =========================
@@ -136,57 +142,56 @@ export async function GET(request: Request, ctx: IContext) {
     // =========================
     // CUSTOMER
     // =========================
-    doc.fontSize(13).font("Helvetica-Bold").text("CUSTOMER");
+    doc.fontSize(13).font("Helvetica-Bold").text("CUSTOMER", 65);
 
     doc.moveDown(0.5);
 
     doc.fontSize(10).font("Helvetica");
 
-    doc.text(`Name        : ${user.name}`);
-    doc.text(`Email       : ${user.email}`);
-    doc.text(`Phone       : ${user.phone}`);
+    doc.text(`Name        : ${user.name}`, 65);
+    doc.text(`Email       : ${user.email}`, 65);
+    doc.text(`Phone       : ${user.phone}`, 65);
 
     doc.moveDown();
 
     // =========================
     // VEHICLE
     // =========================
-    doc.fontSize(13).font("Helvetica-Bold").text("VEHICLE");
+    doc.fontSize(13).font("Helvetica-Bold").text("VEHICLE", 65);
 
     doc.moveDown(0.5);
 
     doc.fontSize(10).font("Helvetica");
 
-    doc.text(`Brand       : ${vehicle.brand}`);
-    doc.text(`Model       : ${vehicle.model}`);
-    doc.text(`Plate Number: ${vehicle.plate_number}`);
+    doc.text(`Brand       : ${vehicle.brand}`, 65);
+    doc.text(`Model       : ${vehicle.model}`, 65);
+    doc.text(`Plate Number: ${vehicle.plate_number}`, 65);
 
     doc.moveDown();
 
     // =========================
     // WORKSHOP
     // =========================
-    doc.fontSize(13).font("Helvetica-Bold").text("WORKSHOP");
+    doc.fontSize(13).font("Helvetica-Bold").text("WORKSHOP", 65);
 
     doc.moveDown(0.5);
 
     doc.fontSize(10).font("Helvetica");
 
-    doc.text(`Name        : ${workshop.name}`);
-    doc.text(`Address     : ${workshop.address}`);
+    doc.text(`Name        : ${workshop.name}`, 65);
+    doc.text(`Address     : ${workshop.address}`, 65);
 
     doc.moveDown();
 
     // =========================
     // SERVICES
     // =========================
-    doc.fontSize(13).font("Helvetica-Bold").text("SERVICES");
+    doc.fontSize(13).font("Helvetica-Bold").text("SERVICES", 65);
 
     doc.moveDown(0.5);
 
     const tableTop = doc.y;
 
-    // Header tabel
     doc.rect(50, tableTop, 495, 25).fillAndStroke("#eeeeee", "#cccccc");
 
     doc
@@ -227,7 +232,6 @@ export async function GET(request: Request, ctx: IContext) {
       currentY += 30;
     }
 
-    // Bottom table line
     doc
       .moveTo(50, currentY)
       .lineTo(545, currentY)
@@ -249,7 +253,7 @@ export async function GET(request: Request, ctx: IContext) {
     // =========================
     // PENDING TASKS
     // =========================
-    doc.fontSize(13).font("Helvetica-Bold").text("PENDING TASKS");
+    doc.fontSize(13).font("Helvetica-Bold").text("PENDING TASKS", 65);
 
     doc.moveDown(0.5);
 
@@ -257,10 +261,11 @@ export async function GET(request: Request, ctx: IContext) {
 
     if (booking.pending_tasks && booking.pending_tasks.length > 0) {
       booking.pending_tasks.forEach((task) => {
-        doc.text(`• ${task}`);
+        doc.text(`• ${task}`, 65);
       });
     } else {
-      doc.fillColor("#666666").text("No pending tasks");
+      doc.fillColor("#666666").text("No pending tasks", 65);
+
       doc.fillColor("#000000");
     }
 
@@ -269,12 +274,18 @@ export async function GET(request: Request, ctx: IContext) {
     // =========================
     // SERVICE STATUS
     // =========================
-    doc.fontSize(13).font("Helvetica-Bold").text("SERVICE STATUS");
+
+    // Judul di tengah
+    doc.fontSize(13).font("Helvetica-Bold").text("SERVICE STATUS", 50, doc.y, {
+      width: 495,
+      align: "center",
+    });
 
     doc.moveDown(0.5);
 
     const statusY = doc.y;
 
+    // Box status
     doc.roundedRect(50, statusY, 495, 40, 6).stroke();
 
     doc
@@ -308,6 +319,31 @@ export async function GET(request: Request, ctx: IContext) {
     });
 
     const pdfBuffer = Buffer.concat(chunks);
+
+    await transporter.sendMail({
+      from: `"CarMate" <${process.env.EMAIL_USER}>`,
+      to: user.email,
+      subject: `CarMate Service Report - ${booking.booking_code}`,
+      text: `Halo ${user.name},
+
+        Service kendaraan Anda telah selesai.
+
+        Booking Code: ${booking.booking_code}
+        Workshop: ${workshop.name}
+        Status: ${booking.status}
+
+        Service report terlampir pada email ini.
+
+        Terima kasih telah menggunakan CarMate.`,
+
+      attachments: [
+        {
+          filename: `CarMate-${booking.booking_code}.pdf`,
+          content: pdfBuffer,
+          contentType: "application/pdf",
+        },
+      ],
+    });
 
     return new Response(pdfBuffer as BodyInit, {
       status: 200,
