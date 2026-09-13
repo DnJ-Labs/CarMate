@@ -165,6 +165,7 @@ export async function PATCH(
 
     return Response.json(updatedBooking, { status: 200 });
   } catch (error: unknown) {
+    console.log(error)
     const { message, status } = errorHandler(error);
     return Response.json({ message }, { status });
   }
