@@ -15,10 +15,28 @@ interface MidtransNotificationBody {
   fraud_status?: string;
 }
 
+function safeCompare(a: string, b: string): boolean {
+  const bufA = Buffer.from(a, "utf-8");
+  const bufB = Buffer.from(b, "utf-8");
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 export async function POST(request: Request) {
   try {
     const body: MidtransNotificationBody = await request.json();
-    const { order_id, status_code, gross_amount, signature_key } = body;
+    const {
+      order_id,
+      status_code,
+      gross_amount,
+      signature_key,
+      transaction_status,
+      fraud_status,
+    } = body;
+
+    if (!order_id || !status_code || !gross_amount || !signature_key) {
+      throw new BadRequestError("Incomplete notification payload");
+    }
 
     const expectedSignature = crypto
       .createHash("sha512")
@@ -27,7 +45,7 @@ export async function POST(request: Request) {
       )
       .digest("hex");
 
-    if (expectedSignature !== signature_key) {
+    if (!safeCompare(expectedSignature, signature_key)) {
       throw new BadRequestError("Invalid signature");
     }
 
@@ -36,9 +54,20 @@ export async function POST(request: Request) {
       order_id,
     ).first()) as unknown as IPayment | null;
 
-    if (!payment) throw new BadRequestError("Payment not found");
+    if (!payment) {
+      // order_id tidak dikenal -> tidak perlu retry, balas 200 saja
+      return Response.json(
+        { message: "Payment not found, ignored" },
+        { status: 200 },
+      );
+    }
 
-    const { transaction_status, fraud_status } = body;
+    // Validasi jumlah (keduanya sudah integer, tidak perlu desimal lagi)
+    const expectedAmount = Math.round(Number(payment.amount ?? 0));
+    const notifiedAmount = Math.round(Number(gross_amount));
+    if (expectedAmount !== notifiedAmount) {
+      throw new BadRequestError("Amount mismatch");
+    }
 
     let newStatus: "pending" | "paid" | "failed" = "pending";
 
@@ -46,8 +75,13 @@ export async function POST(request: Request) {
       transaction_status === "capture" ||
       transaction_status === "settlement"
     ) {
-      newStatus =
-        fraud_status === "accept" || !fraud_status ? "paid" : "failed";
+      if (!fraud_status || fraud_status === "accept") {
+        newStatus = "paid";
+      } else if (fraud_status === "challenge") {
+        newStatus = "pending"; // masih ditinjau manual, jangan langsung failed
+      } else {
+        newStatus = "failed";
+      }
     } else if (
       transaction_status === "deny" ||
       transaction_status === "cancel" ||
@@ -58,9 +92,19 @@ export async function POST(request: Request) {
       newStatus = "pending";
     }
 
+    // Idempotency: jangan proses ulang kalau status sudah final & sama
+    if (payment.status === "paid" && newStatus === "paid") {
+      return Response.json({ message: "Already processed" }, { status: 200 });
+    }
+    if (payment.status === "failed" && newStatus === "failed") {
+      return Response.json({ message: "Already processed" }, { status: 200 });
+    }
+
     await Payment.where("payment_gateway_ref", order_id).update({
       status: newStatus,
-      ...(newStatus === "paid" ? { paid_at: new Date() } : {}),
+      ...(newStatus === "paid" && payment.status !== "paid"
+        ? { paid_at: new Date() }
+        : {}),
     });
 
     return Response.json({ message: "Notification handled" }, { status: 200 });

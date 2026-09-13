@@ -1,5 +1,6 @@
 import { BadRequestError } from "@/server/helpers/customError";
 import { errorHandler } from "@/server/helpers/errorHandler";
+import { generateAndSendServiceReport } from "@/server/helpers/reportService";
 
 import Booking, {
   IBooking,
@@ -55,7 +56,6 @@ const patchBookingSchema = z
     status: patchStatusEnum.optional(),
     services: z.array(serviceDoneSchema).optional(),
     pending_tasks: z.array(z.string()).optional(),
-    report_pdf_url: z.url("Invalid URL format").optional(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "At least one field must be provided",
@@ -112,7 +112,7 @@ export async function PATCH(
 
         if (hasDisallowedField) {
           throw new BadRequestError(
-            'Saat mengubah status ke "onprogress", hanya boleh mengirim "status" dan "services" (tidak boleh ada "pending_tasks" atau "report_pdf_url")',
+            'Saat mengubah status ke "onprogress", hanya boleh mengirim "status" dan "services" (tidak boleh ada "pending_tasks")',
           );
         }
 
@@ -124,7 +124,6 @@ export async function PATCH(
       }
 
       // status "done": bebas kirim services (akan digabung dengan yang lama),
-      // pending_tasks, dan report_pdf_url — semua opsional
     }
 
     const updatePayload: Partial<IBooking> = {};
@@ -150,9 +149,7 @@ export async function PATCH(
     if (validated.pending_tasks) {
       updatePayload.pending_tasks = validated.pending_tasks;
     }
-    if (validated.report_pdf_url) {
-      updatePayload.report_pdf_url = validated.report_pdf_url;
-    }
+
     if (validated.status) {
       updatePayload.status = validated.status;
     }
@@ -163,9 +160,17 @@ export async function PATCH(
       id,
     )) as unknown as IBooking | null;
 
-    return Response.json(updatedBooking, { status: 200 });
+    if (validated.status === "done") {
+      generateAndSendServiceReport(id).catch((err) => {
+        console.error("Gagal generate/kirim service report:", err);
+      });
+    }
+
+    return Response.json((updatedBooking as any)?.$original ?? updatedBooking, {
+      status: 200,
+    });
   } catch (error: unknown) {
-    console.log(error)
+    console.log(error);
     const { message, status } = errorHandler(error);
     return Response.json({ message }, { status });
   }
