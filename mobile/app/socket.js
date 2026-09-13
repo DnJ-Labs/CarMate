@@ -1,7 +1,23 @@
 import { io } from "socket.io-client";
 
-const socket = io("https://pn9v04b7-3001.asse.devtunnels.ms/", {
-  transports: ["websocket"],
+const socket = io("https://pn9v04b7-3001.asse.devtunnels.ms/");
+
+socket.on("connect", () => {
+  console.log("SOCKET CONNECTED:", socket.id);
+});
+
+socket.on("connect_error", (error) => {
+  console.log("SOCKET ERROR:", error.message);
+});
+
+socket.on("disconnect", () => {
+  console.log("SOCKET DISCONNECTED");
+});
+
+// BOOKING STATUS
+
+socket.on("booking:status", (data) => {
+  console.log("BOOKING STATUS UPDATE:", data);
 });
 
 export default socket;

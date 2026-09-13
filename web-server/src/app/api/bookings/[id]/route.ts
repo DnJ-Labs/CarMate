@@ -1,13 +1,15 @@
 import { BadRequestError } from "@/server/helpers/customError";
 import { errorHandler } from "@/server/helpers/errorHandler";
-
+import Notification from "@/server/models/Notification";
 import Booking, {
   IBooking,
   BookingStatus,
   serviceDoneSchema,
 } from "@/server/models/Booking";
 import Workshop, { IWorkshop } from "@/server/models/Workshops";
+import User, { IUser } from "@/server/models/User";
 import * as z from "zod";
+import { sendPushNotification } from "@/server/helpers/sendPushNotification";
 
 export const dynamic = "force-dynamic";
 
@@ -88,6 +90,9 @@ export async function PATCH(
     const booking = (await Booking.find(id)) as unknown as IBooking | null;
     if (!booking) throw new BadRequestError("Booking not found");
 
+    const user = (await User.find(booking.user_id)) as unknown as IUser | null;
+    if (!user) throw new BadRequestError("User not found");
+
     const workshop = (await Workshop.find(
       booking.bengkel_id,
     )) as unknown as IWorkshop | null;
@@ -159,13 +164,56 @@ export async function PATCH(
 
     await Booking.where("_id", id).update(updatePayload);
 
+    if (validated.status) {
+      try {
+        await fetch(`${process.env.SOCKET_SERVER_URL}/emit`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            event: "booking:status",
+            data: {
+              booking_id: id,
+              status: validated.status,
+            },
+          }),
+        });
+      } catch (socketError) {
+        console.error("Socket emit failed:", socketError);
+      }
+    }
+
+    // Notification hanya ketika service selesai
+    if (validated.status === "done") {
+      try {
+        await Notification.create({
+          user_id: booking.user_id,
+          booking_id: id,
+          channel: "push",
+          message: `Service kendaraan kamu dengan booking ${booking.booking_code} sudah selesai.`,
+          sent_at: new Date(),
+        });
+
+        await sendPushNotification(
+          user.fcm_tokens,
+          "Service Selesai",
+          `Service kendaraan kamu dengan booking ${booking.booking_code} sudah selesai.`,
+        );
+
+        console.log("Notification sent to:", booking.user_id);
+      } catch (notificationError) {
+        console.error("Notification failed:", notificationError);
+      }
+    }
+
     const updatedBooking = (await Booking.find(
       id,
     )) as unknown as IBooking | null;
 
     return Response.json(updatedBooking, { status: 200 });
   } catch (error: unknown) {
-    console.log(error)
+    console.log(error);
     const { message, status } = errorHandler(error);
     return Response.json({ message }, { status });
   }

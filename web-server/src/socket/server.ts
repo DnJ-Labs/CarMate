@@ -1,7 +1,49 @@
 import { createServer } from "http";
 import { Server } from "socket.io";
 
-const httpServer = createServer();
+const httpServer = createServer((req, res) => {
+  // Test endpoint untuk mengirim event dari Postman
+  if (req.method === "POST" && req.url === "/emit") {
+    let body = "";
+
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+
+    req.on("end", () => {
+      try {
+        const { event, data } = JSON.parse(body);
+
+        io.emit(event, data);
+
+        res.writeHead(200, {
+          "Content-Type": "application/json",
+        });
+
+        res.end(
+          JSON.stringify({
+            message: "Event emitted successfully",
+          }),
+        );
+      } catch (error) {
+        res.writeHead(400, {
+          "Content-Type": "application/json",
+        });
+
+        res.end(
+          JSON.stringify({
+            message: "Invalid JSON",
+          }),
+        );
+      }
+    });
+
+    return;
+  }
+
+  res.writeHead(404);
+  res.end("Not Found");
+});
 
 const io = new Server(httpServer, {
   cors: {
