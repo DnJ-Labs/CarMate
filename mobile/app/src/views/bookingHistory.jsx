@@ -11,8 +11,7 @@ import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 
 import styles from "../styles/bookingHistoryStyles";
-
-const API_URL = "http://localhost:3000";
+import baseUrl from "../../constant/baseUrl";
 
 export default function BookingHistory() {
   const [bookings, setBookings] = useState([]);
@@ -28,7 +27,7 @@ export default function BookingHistory() {
         return;
       }
 
-      const response = await axios.get(`${API_URL}/api/bookings`, {
+      const response = await axios.get(`${baseUrl}/api/bookings`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

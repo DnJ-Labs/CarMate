@@ -4,6 +4,7 @@ import {
   Alert,
   ScrollView,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -11,9 +12,8 @@ import DateTimePicker from "@react-native-community/datetimepicker";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 
+import baseUrl from "../../constant/baseUrl";
 import styles from "../styles/addBookingStyles";
-
-const API_URL = "http://localhost:3000";
 
 export default function AddBooking({ route, navigation }) {
   const vehicleIdFromRoute = route?.params?.vehicleId || null;
@@ -42,10 +42,11 @@ export default function AddBooking({ route, navigation }) {
   };
 
   // GET VEHICLES
+  // =========================
 
   const fetchVehicles = async (token) => {
     try {
-      const response = await axios.get(`${API_URL}/api/vehicles`, {
+      const response = await axios.get(`${baseUrl}/api/vehicles`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -59,7 +60,7 @@ export default function AddBooking({ route, navigation }) {
 
       setVehicles(data);
 
-      // Kalau datang dari Home
+      // Jika datang dari Home
       if (vehicleIdFromRoute) {
         const vehicle = data.find(
           (item) => String(item._id) === String(vehicleIdFromRoute),
@@ -75,10 +76,15 @@ export default function AddBooking({ route, navigation }) {
   };
 
   // GET WORKSHOPS
+  // =========================
 
   const fetchWorkshops = async (token) => {
     try {
-      const response = await axios.get(`${API_URL}/api/workshop`, {
+      const response = await axios.get(`${baseUrl}/api/workshop`, {
+        params: {
+          page: 1,
+          limit: 100,
+        },
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -92,7 +98,7 @@ export default function AddBooking({ route, navigation }) {
 
       setWorkshops(data);
 
-      // Kalau datang dari Workshop
+      // Jika datang dari Workshop
       if (workshopIdFromRoute) {
         const workshop = data.find(
           (item) => String(item._id) === String(workshopIdFromRoute),
@@ -111,6 +117,7 @@ export default function AddBooking({ route, navigation }) {
   };
 
   // LOAD DATA
+  // =========================
 
   useEffect(() => {
     const loadData = async () => {
@@ -132,6 +139,7 @@ export default function AddBooking({ route, navigation }) {
   }, []);
 
   // DATE
+  // =========================
 
   const handleDateChange = (event, selectedDate) => {
     setShowDatePicker(false);
@@ -171,6 +179,7 @@ export default function AddBooking({ route, navigation }) {
   };
 
   // TIME SLOT
+  // =========================
 
   const getDayName = (date) => {
     if (!date) {
@@ -203,11 +212,7 @@ export default function AddBooking({ route, navigation }) {
       (item) => item.day?.toLowerCase() === dayName?.toLowerCase(),
     );
 
-    if (!todaySchedule) {
-      return [];
-    }
-
-    if (!todaySchedule.open || !todaySchedule.close) {
+    if (!todaySchedule || !todaySchedule.open || !todaySchedule.close) {
       return [];
     }
 
@@ -216,20 +221,22 @@ export default function AddBooking({ route, navigation }) {
     const [closeHour, closeMinute] = todaySchedule.close.split(":").map(Number);
 
     let startMinutes = openHour * 60 + openMinute;
+
     const endMinutes = closeHour * 60 + closeMinute;
 
     const slots = [];
 
     while (startMinutes < endMinutes) {
       const hour = Math.floor(startMinutes / 60);
+
       const minute = startMinutes % 60;
 
       const formattedHour = String(hour).padStart(2, "0");
+
       const formattedMinute = String(minute).padStart(2, "0");
 
       slots.push(`${formattedHour}:${formattedMinute}`);
 
-      // Slot setiap 30 menit
       startMinutes += 30;
     }
 
@@ -239,6 +246,7 @@ export default function AddBooking({ route, navigation }) {
   const timeSlots = generateTimeSlots();
 
   // SUBMIT BOOKING
+  // =========================
 
   const handleSubmit = async () => {
     if (!selectedVehicle) {
@@ -273,15 +281,19 @@ export default function AddBooking({ route, navigation }) {
 
       const payload = {
         vehicle_id: selectedVehicle._id,
+
         bengkel_id: selectedWorkshop._id,
+
         booking_date: formatDateForAPI(bookingDate),
+
         booking_time_slot: bookingTimeSlot,
+
         notes: notes.trim() || undefined,
       };
 
       console.log("BOOKING PAYLOAD:", payload);
 
-      const response = await axios.post(`${API_URL}/api/bookings`, payload, {
+      const response = await axios.post(`${baseUrl}/api/bookings`, payload, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
@@ -314,6 +326,7 @@ export default function AddBooking({ route, navigation }) {
   };
 
   // LOADING
+  // =========================
 
   if (loading) {
     return (
@@ -344,6 +357,7 @@ export default function AddBooking({ route, navigation }) {
         onPress={() => {
           if (!vehicleIdFromRoute) {
             setShowVehicleList(!showVehicleList);
+
             setShowWorkshopList(false);
             setShowTimeList(false);
           }
@@ -363,8 +377,6 @@ export default function AddBooking({ route, navigation }) {
           <Text style={styles.placeholder}>Select vehicle</Text>
         )}
       </TouchableOpacity>
-
-      {/* Vehicle Dropdown */}
 
       {showVehicleList && !vehicleIdFromRoute && (
         <View style={styles.dropdown}>
@@ -405,6 +417,7 @@ export default function AddBooking({ route, navigation }) {
         onPress={() => {
           if (!workshopIdFromRoute) {
             setShowWorkshopList(!showWorkshopList);
+
             setShowVehicleList(false);
             setShowTimeList(false);
           }
@@ -423,8 +436,6 @@ export default function AddBooking({ route, navigation }) {
         )}
       </TouchableOpacity>
 
-      {/* Workshop Dropdown */}
-
       {showWorkshopList && !workshopIdFromRoute && (
         <View style={styles.dropdown}>
           {workshops.length === 0 ? (
@@ -436,7 +447,9 @@ export default function AddBooking({ route, navigation }) {
                 style={styles.option}
                 onPress={() => {
                   setSelectedWorkshop(workshop);
+
                   setBookingTimeSlot(null);
+
                   setShowWorkshopList(false);
                 }}
               >
@@ -488,6 +501,7 @@ export default function AddBooking({ route, navigation }) {
           }
 
           setShowTimeList(!showTimeList);
+
           setShowVehicleList(false);
           setShowWorkshopList(false);
         }}
@@ -498,8 +512,6 @@ export default function AddBooking({ route, navigation }) {
           {bookingTimeSlot || "Select time slot"}
         </Text>
       </TouchableOpacity>
-
-      {/* Time Dropdown */}
 
       {showTimeList && (
         <View style={styles.dropdown}>
@@ -514,6 +526,7 @@ export default function AddBooking({ route, navigation }) {
                 style={styles.option}
                 onPress={() => {
                   setBookingTimeSlot(slot);
+
                   setShowTimeList(false);
                 }}
               >
@@ -528,10 +541,7 @@ export default function AddBooking({ route, navigation }) {
 
       <Text style={styles.label}>Notes</Text>
 
-      <TouchableOpacity
-        activeOpacity={1}
-        style={[styles.input, styles.notesInput]}
-      >
+      <View style={[styles.input, styles.notesInput]}>
         <TextInput
           value={notes}
           onChangeText={setNotes}
@@ -540,7 +550,7 @@ export default function AddBooking({ route, navigation }) {
           multiline
           style={styles.notesTextInput}
         />
-      </TouchableOpacity>
+      </View>
 
       {/* ================= SUBMIT ================= */}
 

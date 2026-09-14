@@ -7,129 +7,132 @@ const styles = StyleSheet.create({
   },
 
   contentContainer: {
-    paddingHorizontal: 20,
+    padding: 24,
     paddingBottom: 40,
   },
 
   loadingContainer: {
     flex: 1,
-    justifyContent: "center",
     alignItems: "center",
+    justifyContent: "center",
     backgroundColor: "#F6F7FB",
   },
 
   title: {
-    fontSize: 27,
+    fontSize: 26,
     fontWeight: "700",
     color: "#111827",
-    marginTop: 25,
+    marginBottom: 6,
   },
 
   subtitle: {
     fontSize: 14,
-    color: "#8A8F9C",
-    marginTop: 6,
+    color: "#6B7280",
     marginBottom: 28,
   },
 
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#374151",
+    color: "#1F2937",
     marginBottom: 8,
-    marginTop: 18,
+    marginTop: 16,
   },
 
   selectBox: {
+    minHeight: 58,
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    minHeight: 62,
+    paddingVertical: 12,
     justifyContent: "center",
   },
 
   lockedSelectBox: {
-    backgroundColor: "#F0F1F5",
-  },
-
-  placeholder: {
-    fontSize: 14,
-    color: "#A0A5B1",
+    backgroundColor: "#F1F2F5",
   },
 
   selectedTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
     color: "#111827",
   },
 
   selectedSubtitle: {
     fontSize: 12,
-    color: "#8A8F9C",
-    marginTop: 4,
+    color: "#6B7280",
+    marginTop: 3,
+  },
+
+  placeholder: {
+    fontSize: 14,
+    color: "#9CA3AF",
   },
 
   dropdown: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
     marginTop: 6,
     overflow: "hidden",
   },
 
   option: {
     paddingHorizontal: 16,
-    paddingVertical: 15,
+    paddingVertical: 13,
     borderBottomWidth: 1,
-    borderBottomColor: "#F0F1F4",
+    borderBottomColor: "#F0F0F0",
   },
 
   optionTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
     color: "#111827",
   },
 
   optionSubtitle: {
     fontSize: 12,
-    color: "#8A8F9C",
-    marginTop: 4,
+    color: "#6B7280",
+    marginTop: 3,
   },
 
   emptyText: {
     padding: 16,
-    fontSize: 14,
-    color: "#8A8F9C",
+    textAlign: "center",
+    fontSize: 13,
+    color: "#9CA3AF",
   },
 
   input: {
     backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    paddingHorizontal: 16,
-    fontSize: 14,
-    color: "#111827",
-    minHeight: 52,
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+    borderRadius: 12,
   },
 
   notesInput: {
-    height: 110,
-    paddingTop: 5,
+    minHeight: 110,
   },
 
   notesTextInput: {
     flex: 1,
+    minHeight: 110,
+    padding: 16,
     fontSize: 14,
     color: "#111827",
     textAlignVertical: "top",
   },
 
   submitButton: {
+    marginTop: 28,
+    height: 52,
+    borderRadius: 12,
     backgroundColor: "#4438F5",
-    borderRadius: 16,
-    minHeight: 54,
-    justifyContent: "center",
     alignItems: "center",
-    marginTop: 30,
+    justifyContent: "center",
   },
 
   disabledButton: {
@@ -137,9 +140,9 @@ const styles = StyleSheet.create({
   },
 
   submitText: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
+    color: "#FFFFFF",
   },
 });
 
