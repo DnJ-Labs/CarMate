@@ -27,29 +27,6 @@ export async function GET(request: Request) {
 
     const limit: number = Math.max(Number(searchParams.get("limit")) || 10, 1);
 
-    // const skip: number = (page - 1) * limit;
-
-    // const workshops: IWorkshop[] = await Workshop.get();
-
-    // const total: number = workshops.length;
-
-    // const totalPages: number = Math.ceil(total / limit);
-
-    // const data: IWorkshop[] = workshops.slice(skip, skip + limit);
-
-    // const response: WorkshopResponse = {
-    //   data,
-    //   pagination: {
-    //     page,
-    //     limit,
-    //     total,
-    //     totalPages,
-    //     first: 1,
-    //     prev: page > 1 ? page - 1 : null,
-    //     next: page < totalPages ? page + 1 : null,
-    //     last: totalPages,
-    //   },
-    // };
     const workshops = await Workshop.paginate(page, limit);
 
     return Response.json(workshops, {

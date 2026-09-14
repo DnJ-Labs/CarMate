@@ -49,7 +49,7 @@ export function Login() {
         setError(null);
 
         try {
-            const { data } = await axios.post(`${baseUrl}api/user/login`, {
+            const { data } = await axios.post(`${baseUrl}/api/user/login`, {
                 email: input.email,
                 password: input.password,
             });

@@ -40,7 +40,7 @@ export function Register() {
         setError(null);
 
         try {
-            await axios.post(`${baseUrl}api/user/register`, {
+            await axios.post(`${baseUrl}/api/user/register`, {
                 email,
                 name: fullName,
                 username,

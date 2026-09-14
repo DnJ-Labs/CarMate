@@ -9,7 +9,17 @@ export async function GET(request: Request) {
       throw new BadRequestError("User Id is required");
     }
 
-    const vehicles: IVehicle[] = await Vehicle.where("user_id", userId).get();
+    const { searchParams } = new URL(request.url);
+    const model = searchParams.get("model");
+
+    let query = Vehicle.where("user_id", userId);
+
+    if (model) {
+      query = query.where("model", "like", `%${model}%`);
+    }
+
+    const vehicles: IVehicle[] = await query.get();
+
     return Response.json(vehicles, {
       status: 200,
     });

@@ -5,6 +5,8 @@ import { BlurView } from 'expo-blur';
 import { StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Home } from "../src/views/home";
+import Profile from "../src/views/profile";
+import { Workshop } from "../src/views/allWorkshops";
 
 
 
@@ -49,6 +51,27 @@ export default function MainNavigator() {
                     ),
                 }}
             />
+             <Tab.Screen
+                name="workshops"
+                component={Workshop}
+                options={{
+                    headerShown: false,
+                    tabBarIcon: ({ color, size }) => (
+                        <Feather name="home" size={size} color={color} />
+                    ),
+                }}
+            />
+            <Tab.Screen
+                name="Profile"
+                component={Profile}
+                options={{
+                    headerShown: false,
+                    tabBarIcon: ({ color, size }) => (
+                        <Feather name="home" size={size} color={color} />
+                    ),
+                }}
+            />
+            
        
             
         </Tab.Navigator>
