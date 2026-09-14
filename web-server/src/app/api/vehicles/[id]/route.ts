@@ -51,6 +51,7 @@ export async function PUT(request: Request, ctx: ICtx) {
     await Vehicle.where("_id", id).where("user_id", userId).update({
       brand: validated.brand,
       model: validated.model,
+      vehicles_img: validated.vehicles_img,
       plate_number: validated.plate_number,
     });
 
