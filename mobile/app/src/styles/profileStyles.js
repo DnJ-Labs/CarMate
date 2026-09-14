@@ -8,7 +8,7 @@ const styles = StyleSheet.create({
 
   contentContainer: {
     paddingHorizontal: 20,
-    paddingBottom: 30,
+    paddingBottom: 40,
   },
 
   loadingContainer: {
@@ -16,11 +16,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     backgroundColor: "#F6F7FB",
-  },
-
-  errorText: {
-    fontSize: 15,
-    color: "#6B7280",
   },
 
   title: {
@@ -41,6 +36,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
     color: "#111827",
+    textAlign: "center",
   },
 
   username: {
@@ -53,7 +49,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
     paddingHorizontal: 18,
-    paddingVertical: 6,
+    paddingVertical: 5,
   },
 
   infoItem: {
@@ -70,8 +66,8 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     color: "#9CA3AF",
+    letterSpacing: 0.6,
     marginBottom: 5,
-    letterSpacing: 0.5,
   },
 
   value: {
@@ -83,12 +79,21 @@ const styles = StyleSheet.create({
   arrow: {
     fontSize: 24,
     color: "#A0A5B1",
+    marginLeft: 10,
   },
 
-  menuContainer: {
+  sectionTitle: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#6B7280",
+    marginTop: 25,
+    marginBottom: 10,
+    marginLeft: 3,
+  },
+
+  menuCard: {
     backgroundColor: "#FFFFFF",
     borderRadius: 18,
-    marginTop: 18,
     paddingHorizontal: 18,
   },
 
@@ -105,29 +110,16 @@ const styles = StyleSheet.create({
     color: "#1F2937",
   },
 
-  editButton: {
-    backgroundColor: "#4438F5",
-    borderRadius: 14,
-    alignItems: "center",
-    paddingVertical: 15,
-    marginTop: 25,
-  },
-
-  editButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-
   logoutButton: {
     alignItems: "center",
     paddingVertical: 20,
+    marginTop: 15,
   },
 
   logoutText: {
-    color: "#E05252",
     fontSize: 15,
     fontWeight: "600",
+    color: "#E05252",
   },
 });
 

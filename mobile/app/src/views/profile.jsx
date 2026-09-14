@@ -52,26 +52,22 @@ export default function Profile() {
     );
   }
 
-  if (!user) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text style={styles.errorText}>Unable to load profile</Text>
-      </View>
-    );
-  }
-
   return (
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
+      showsVerticalScrollIndicator={false}
     >
+      {/* Header */}
       <Text style={styles.title}>Profile</Text>
 
-      {/* User */}
+      {/* User Information */}
       <View style={styles.userSection}>
-        <Text style={styles.name}>{user.name}</Text>
+        <Text style={styles.name}>{user?.name || "-"}</Text>
 
-        <Text style={styles.username}>@{user.username}</Text>
+        <Text style={styles.username}>
+          {user?.username ? `@${user.username}` : "-"}
+        </Text>
       </View>
 
       {/* Contact Information */}
@@ -79,7 +75,8 @@ export default function Profile() {
         <TouchableOpacity style={styles.infoItem}>
           <View style={styles.infoContent}>
             <Text style={styles.label}>PHONE</Text>
-            <Text style={styles.value}>{user.phone || "-"}</Text>
+
+            <Text style={styles.value}>{user?.phone || "-"}</Text>
           </View>
 
           <Text style={styles.arrow}>›</Text>
@@ -88,17 +85,40 @@ export default function Profile() {
         <TouchableOpacity style={styles.infoItem}>
           <View style={styles.infoContent}>
             <Text style={styles.label}>EMAIL</Text>
-            <Text style={styles.value}>{user.email}</Text>
+
+            <Text style={styles.value}>{user?.email || "-"}</Text>
           </View>
 
           <Text style={styles.arrow}>›</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Menu */}
-      <View style={styles.menuContainer}>
+      {/* Account */}
+      <Text style={styles.sectionTitle}>Account</Text>
+
+      <View style={styles.menuCard}>
+        <TouchableOpacity style={styles.menuItem}>
+          <Text style={styles.menuText}>Edit Profile</Text>
+          <Text style={styles.arrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.menuItem}>
+          <Text style={styles.menuText}>Settings</Text>
+          <Text style={styles.arrow}>›</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Service */}
+      <Text style={styles.sectionTitle}>Service</Text>
+
+      <View style={styles.menuCard}>
         <TouchableOpacity style={styles.menuItem}>
           <Text style={styles.menuText}>Service History</Text>
+          <Text style={styles.arrow}>›</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.menuItem}>
+          <Text style={styles.menuText}>Booking History</Text>
           <Text style={styles.arrow}>›</Text>
         </TouchableOpacity>
 
@@ -107,11 +127,6 @@ export default function Profile() {
           <Text style={styles.arrow}>›</Text>
         </TouchableOpacity>
       </View>
-
-      {/* Edit Profile */}
-      <TouchableOpacity style={styles.editButton}>
-        <Text style={styles.editButtonText}>Edit Profile</Text>
-      </TouchableOpacity>
 
       {/* Logout */}
       <TouchableOpacity style={styles.logoutButton}>
