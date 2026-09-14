@@ -12,6 +12,7 @@ import * as z from "zod";
 
 export interface IVehicle extends IMongoloquentSchema, IMongoloquentTimestamps {
   user_id: string;
+  vehicles_img: string;
   brand: string;
   model: string;
   plate_number: string;
@@ -21,6 +22,7 @@ export const vehicleSchema = z.object({
   user_id: z.string().min(1, "User id is required"),
   brand: z.string().min(1, "Brand is required"),
   model: z.string().min(1, "Model is required"),
+  vehicles_img: z.string().min(1, "image is required"),
   plate_number: z.string().min(1, "Plate number is required"),
 });
 

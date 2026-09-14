@@ -49,10 +49,10 @@ export async function POST(request: Request) {
       throw new BadRequestError("Invalid signature");
     }
 
-    const payment = (await Payment.where(
+    const payment = await Payment.where(
       "payment_gateway_ref",
       order_id,
-    ).first()) as unknown as IPayment | null;
+    ).first();
 
     if (!payment) {
       // order_id tidak dikenal -> tidak perlu retry, balas 200 saja

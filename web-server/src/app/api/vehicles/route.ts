@@ -29,6 +29,7 @@ export async function POST(request: Request) {
     const validated = vehicleSchema.parse({ ...body, user_id: userId });
     const vehicle = await Vehicle.insert({
       user_id: userId,
+      vehicles_img: validated.vehicles_img,
       brand: validated.brand,
       model: validated.model,
       plate_number: validated.plate_number,
