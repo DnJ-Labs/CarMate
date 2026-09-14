@@ -1,0 +1,203 @@
+import React, { useCallback, useState } from "react";
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  Text,
+  View,
+} from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import * as SecureStore from "expo-secure-store";
+import axios from "axios";
+
+import styles from "../styles/bookingHistoryStyles";
+import baseUrl from "../../constant/baseUrl";
+
+export default function BookingHistory() {
+  const [bookings, setBookings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchBookings = async () => {
+    try {
+      const token = await SecureStore.getItemAsync("access_token");
+
+      if (!token) {
+        console.log("Access token not found");
+        return;
+      }
+
+      const response = await axios.get(`${baseUrl}/api/bookings`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setBookings(response.data);
+    } catch (error) {
+      console.log(
+        "GET BOOKING HISTORY ERROR:",
+        error.response?.data || error.message,
+      );
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchBookings();
+    }, []),
+  );
+
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchBookings();
+  };
+
+  const getStatusStyle = (status) => {
+    switch (status) {
+      case "confirmed":
+        return styles.statusConfirmed;
+
+      case "checked_in":
+        return styles.statusCheckedIn;
+
+      case "onprogress":
+        return styles.statusOnProgress;
+
+      case "done":
+        return styles.statusDone;
+
+      case "cancelled":
+        return styles.statusCancelled;
+
+      case "pending":
+      default:
+        return styles.statusPending;
+    }
+  };
+
+  const formatDate = (date) => {
+    if (!date) return "-";
+
+    const parsedDate = new Date(date);
+
+    if (Number.isNaN(parsedDate.getTime())) {
+      return "-";
+    }
+
+    return parsedDate.toLocaleDateString("id-ID", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    });
+  };
+
+  const formatPrice = (price) => {
+    if (price === null || price === undefined) {
+      return "-";
+    }
+
+    return `Rp ${Number(price).toLocaleString("id-ID")}`;
+  };
+
+  const renderBooking = ({ item }) => {
+    return (
+      <View style={styles.card}>
+        <View style={styles.cardHeader}>
+          <View>
+            <Text style={styles.bookingLabel}>BOOKING</Text>
+
+            <Text style={styles.bookingCode}>{item.booking_code || "-"}</Text>
+          </View>
+
+          <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
+            <Text style={styles.statusText}>
+              {item.status?.replace("_", " ").toUpperCase() || "-"}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Date</Text>
+
+          <Text style={styles.infoValue}>{formatDate(item.booking_date)}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Time</Text>
+
+          <Text style={styles.infoValue}>{item.booking_time_slot || "-"}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Vehicle</Text>
+
+          <Text style={styles.infoValue}>{item.vehicle_id || "-"}</Text>
+        </View>
+
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Workshop</Text>
+
+          <Text style={styles.infoValue}>{item.bengkel_id || "-"}</Text>
+        </View>
+
+        {item.total_price !== null && item.total_price !== undefined && (
+          <View style={styles.totalContainer}>
+            <Text style={styles.totalLabel}>Total</Text>
+
+            <Text style={styles.totalValue}>
+              {formatPrice(item.total_price)}
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <FlatList
+        data={bookings}
+        keyExtractor={(item) => item._id}
+        renderItem={renderBooking}
+        contentContainerStyle={[
+          styles.contentContainer,
+          bookings.length === 0 && styles.emptyContent,
+        ]}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <Text style={styles.title}>Booking History</Text>
+
+            <Text style={styles.subtitle}>View your service bookings</Text>
+          </View>
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyTitle}>No bookings yet</Text>
+
+            <Text style={styles.emptyText}>
+              Your booking history will appear here.
+            </Text>
+          </View>
+        }
+      />
+    </View>
+  );
+}
