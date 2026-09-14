@@ -6,6 +6,7 @@ import * as SecureStore from 'expo-secure-store';
 import { AuthContext } from './src/context/AuthContext';
 import { AuthStack } from './navigators/authNavigators';
 import MainNavigator from './navigators/mainNavigators';
+import RootNavigator from './navigators/rootNavigators';
 
 
 
@@ -30,7 +31,7 @@ export default function App() {
       <SafeAreaProvider>
         <NavigationContainer>
           {
-            isLogin ? <MainNavigator /> : <AuthStack />
+            isLogin ? <RootNavigator /> : <AuthStack />
           }
         </NavigationContainer>
       </SafeAreaProvider>
