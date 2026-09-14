@@ -1,21 +1,40 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
-import './socket'
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { NavigationContainer } from '@react-navigation/native';
+
+import { useEffect, useState } from 'react';
+import * as SecureStore from 'expo-secure-store';
+import { AuthContext } from './src/context/AuthContext';
+import { AuthStack } from './navigators/authNavigators';
+import MainNavigator from './navigators/mainNavigators';
+
+
 
 export default function App() {
+  const [isLogin, setIsLogin] = useState(false);
+  useEffect(() => {
+    cekToken();
+  }, []);
+  const cekToken = async () => {
+    try {
+      const token = await SecureStore.getItemAsync('access_token');
+      if (token) {
+        setIsLogin(true);
+      }
+    } catch (error) {
+      console.error('Error retrieving token:', error);
+    }
+  }
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <AuthContext.Provider value={{ isLogin, setIsLogin }}>
+      <SafeAreaProvider>
+        <NavigationContainer>
+          {
+            isLogin ? <MainNavigator /> : <AuthStack />
+          }
+        </NavigationContainer>
+      </SafeAreaProvider>
+    </AuthContext.Provider>
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});

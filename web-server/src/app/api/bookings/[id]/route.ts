@@ -205,9 +205,7 @@ export async function PATCH(
       }
     }
 
-    const updatedBooking = (await Booking.find(
-      id,
-    )) as unknown as IBooking | null;
+    const updatedBooking = await Booking.where("_id", id).first();
 
     if (validated.status === "done") {
       generateAndSendServiceReport(id).catch((err) => {
@@ -215,7 +213,7 @@ export async function PATCH(
       });
     }
 
-    return Response.json((updatedBooking as any)?.$original ?? updatedBooking, {
+    return Response.json(updatedBooking, {
       status: 200,
     });
   } catch (error: unknown) {
