@@ -1,15 +1,17 @@
-import { useContext, useState, useEffect, useCallback } from "react";
+import { useContext, useState, useEffect, useCallback, useRef } from "react";
 import {
   Text,
   View,
   TouchableOpacity,
   TextInput,
   FlatList,
-  ActivityIndicator,
   RefreshControl,
   Image,
+  Animated,
+  StyleSheet,
+  Linking,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
@@ -18,8 +20,62 @@ import baseUrl from "../../constant/baseUrl";
 import { AuthContext } from "../context/AuthContext";
 import styles from "../styles/homeStyles";
 
+const SKELETON_COUNT = 4;
+const TAB_BAR_HEIGHT = 60;
+
+function SkeletonBox({ style }) {
+  const opacity = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0.4,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+    animation.start();
+    return () => animation.stop();
+  }, [opacity]);
+
+  return <Animated.View style={[skeletonStyles.box, style, { opacity }]} />;
+}
+
+function VehicleCardSkeleton() {
+  return (
+    <View style={styles.card}>
+      <SkeletonBox style={skeletonStyles.imageBlock} />
+      <View style={styles.cardBody}>
+        <SkeletonBox style={skeletonStyles.lineModel} />
+        <SkeletonBox style={skeletonStyles.linePlate} />
+      </View>
+      <View style={styles.cardFooter}>
+        <SkeletonBox style={skeletonStyles.buttonBlock} />
+      </View>
+    </View>
+  );
+}
+
+function VehicleListSkeleton({ bottomPadding }) {
+  return (
+    <View style={[styles.listContent, { paddingBottom: bottomPadding }]}>
+      {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
+        <VehicleCardSkeleton key={index} />
+      ))}
+    </View>
+  );
+}
+
 export function Home() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
 
   const authContext = useContext(AuthContext);
   const { setIsLogin } = authContext;
@@ -30,11 +86,21 @@ export function Home() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
+  const listBottomPadding = TAB_BAR_HEIGHT + insets.bottom;
+
+  // GIMMICK 1: Greeting Dinamis Berdasarkan Waktu
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 11) return "Selamat Pagi ☀️";
+    if (hour < 15) return "Selamat Siang ☀️";
+    if (hour < 18) return "Selamat Sore 🌤️";
+    return "Selamat Malam 🌙";
+  };
+
   const fetchVehicles = useCallback(
     async (searchTerm = "") => {
       try {
         setError(null);
-
         const token = await SecureStore.getItemAsync("access_token");
 
         if (!token) {
@@ -53,7 +119,6 @@ export function Home() {
       } catch (err) {
         if (err.response?.status === 401) {
           await SecureStore.deleteItemAsync("access_token");
-
           setIsLogin(false);
           return;
         }
@@ -71,7 +136,6 @@ export function Home() {
 
   useEffect(() => {
     setLoading(true);
-
     const timeout = setTimeout(() => {
       fetchVehicles(search);
     }, 500);
@@ -90,6 +154,37 @@ export function Home() {
     fetchVehicles(search);
   };
 
+  // Header Komponen Tambahan (Greeting, Emergency Call, & Stats)
+  const ListHeaderComponent = () => (
+    <View style={gimmickStyles.headerSection}>
+      {/* Gimmick Emergency Assistance Banner */}
+      <TouchableOpacity
+        style={gimmickStyles.emergencyBanner}
+        activeOpacity={0.85}
+        onPress={() => navigation.navigate("NearestWorkshop")}
+      >
+        <View style={gimmickStyles.emergencyIconContainer}>
+          <Ionicons name="construct-outline" size={22} color="#FFFFFF" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={gimmickStyles.emergencyTitle}>Butuh Bengkel Darurat?</Text>
+          <Text style={gimmickStyles.emergencySubtitle}>
+            Cari lokasi bengkel terdekat di sekitar Anda
+          </Text>
+        </View>
+        <Ionicons name="chevron-forward-outline" size={18} color="#0F2C59" />
+      </TouchableOpacity>
+
+      {/* Counter Ringkasan */}
+      <View style={gimmickStyles.summaryRow}>
+        <Text style={gimmickStyles.summaryTitle}>Garasi Saya</Text>
+        <View style={gimmickStyles.countBadge}>
+          <Text style={gimmickStyles.countText}>{vehicles.length} Mobil</Text>
+        </View>
+      </View>
+    </View>
+  );
+
   const renderVehicleCard = ({ item }) => (
     <View style={styles.card}>
       <TouchableOpacity
@@ -100,7 +195,6 @@ export function Home() {
           })
         }
       >
-        {/* Gambar Kendaraan */}
         <View style={styles.imageWrapper}>
           {item.vehicles_img ? (
             <Image
@@ -114,15 +208,19 @@ export function Home() {
             </View>
           )}
 
-          {/* Badge Merk / Brand */}
           {item.brand && (
             <View style={styles.badgeContainer}>
               <Text style={styles.badgeText}>{item.brand}</Text>
             </View>
           )}
+
+          {/* GIMMICK 2: Status Indicator Chip */}
+          <View style={gimmickStyles.statusChip}>
+            <View style={gimmickStyles.statusDot} />
+            <Text style={gimmickStyles.statusText}>Kondisi Baik</Text>
+          </View>
         </View>
 
-        {/* Info Kendaraan */}
         <View style={styles.cardBody}>
           <Text style={styles.cardModel}>{item.model}</Text>
 
@@ -135,7 +233,6 @@ export function Home() {
         </View>
       </TouchableOpacity>
 
-      {/* Button Action */}
       <View style={styles.cardFooter}>
         <TouchableOpacity
           style={styles.bookButton}
@@ -146,6 +243,7 @@ export function Home() {
             })
           }
         >
+          <Ionicons name="calendar-outline" size={16} color="#FFFFFF" style={{ marginRight: 6 }} />
           <Text style={styles.bookButtonText}>Book Appointment</Text>
         </TouchableOpacity>
       </View>
@@ -154,8 +252,12 @@ export function Home() {
 
   return (
     <SafeAreaView style={styles.container}>
+      {/* Header Utama dengan Greeting */}
       <View style={styles.header}>
-        <Text style={styles.title}>Carmate</Text>
+        <View>
+          <Text style={gimmickStyles.greetingText}>{getGreeting()}</Text>
+          <Text style={styles.title}>Carmate</Text>
+        </View>
 
         <View style={styles.headerActions}>
           <TouchableOpacity
@@ -173,17 +275,13 @@ export function Home() {
             <Ionicons name="notifications-outline" size={22} color="#111827" />
           </TouchableOpacity>
 
-          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-            <Ionicons name="log-out-outline" size={22} color="#d13c3c" />
-            <Ionicons name="add-outline" size={16} color="#FFFFFF" />
-            <Text style={styles.addVehicleText}>Add Vehicle</Text>
-          </TouchableOpacity>
+
         </View>
       </View>
 
+      {/* Input Pencarian */}
       <View style={styles.searchWrapper}>
         <Ionicons name="search-outline" size={18} color="#8A94A6" />
-
         <TextInput
           style={styles.searchInput}
           placeholder="Cari model kendaraan..."
@@ -202,32 +300,150 @@ export function Home() {
       </View>
 
       {loading && !refreshing ? (
-        <View style={styles.centerContent}>
-          <ActivityIndicator size="large" color="#0F2C59" />
-        </View>
+        <VehicleListSkeleton bottomPadding={listBottomPadding} />
       ) : error ? (
         <View style={styles.centerContent}>
           <Ionicons name="alert-circle-outline" size={44} color="#E53E3E" />
           <Text style={styles.errorText}>{error}</Text>
         </View>
-      ) : vehicles.length === 0 ? (
-        <View style={styles.centerContent}>
-          <Ionicons name="car-outline" size={48} color="#A0AEC0" />
-          <Text style={styles.emptyText}>
-            {search ? "Kendaraan tidak ditemukan" : "Belum ada kendaraan"}
-          </Text>
-        </View>
       ) : (
         <FlatList
           data={vehicles}
           keyExtractor={(item) => String(item.id ?? item._id)}
+          ListHeaderComponent={ListHeaderComponent}
           renderItem={renderVehicleCard}
-          contentContainerStyle={styles.listContent}
+          contentContainerStyle={[
+            styles.listContent,
+            { paddingBottom: listBottomPadding },
+          ]}
+          showsVerticalScrollIndicator={false}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          ListEmptyComponent={
+            <View style={styles.centerContent}>
+              <Ionicons name="car-outline" size={48} color="#A0AEC0" />
+              <Text style={styles.emptyText}>
+                {search ? "Kendaraan tidak ditemukan" : "Belum ada kendaraan terdaftar"}
+              </Text>
+            </View>
           }
         />
       )}
     </SafeAreaView>
   );
 }
+
+const gimmickStyles = StyleSheet.create({
+  greetingText: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#64748B",
+  },
+  headerSection: {
+    marginBottom: 12,
+  },
+  emergencyBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    borderRadius: 14,
+    padding: 12,
+    marginBottom: 16,
+    gap: 12,
+  },
+  emergencyIconContainer: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: "#0F2C59",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emergencyTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#0F2C59",
+  },
+  emergencySubtitle: {
+    fontSize: 11,
+    color: "#64748B",
+  },
+  summaryRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  summaryTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#0F2C59",
+  },
+  countBadge: {
+    backgroundColor: "#E0E7FF",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  countText: {
+    fontSize: 11,
+    fontWeight: "700",
+    color: "#3730A3",
+  },
+  statusChip: {
+    position: "absolute",
+    bottom: 10,
+    right: 10,
+    backgroundColor: "rgba(15, 23, 42, 0.75)",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 6,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#22C55E",
+  },
+  statusText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "600",
+  },
+});
+
+const skeletonStyles = StyleSheet.create({
+  box: {
+    backgroundColor: "#E2E8F0",
+    borderRadius: 8,
+  },
+  imageBlock: {
+    width: "100%",
+    height: 140,
+    borderRadius: 16,
+  },
+  lineModel: {
+    height: 15,
+    width: "55%",
+    borderRadius: 6,
+    marginTop: 12,
+  },
+  linePlate: {
+    height: 11,
+    width: "35%",
+    borderRadius: 6,
+    marginTop: 8,
+  },
+  buttonBlock: {
+    height: 40,
+    width: "100%",
+    borderRadius: 12,
+    marginTop: 10,
+  },
+});

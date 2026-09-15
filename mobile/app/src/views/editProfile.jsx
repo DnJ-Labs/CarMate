@@ -28,6 +28,7 @@ export default function EditProfile() {
     const [email, setEmail] = useState(initialUser.email || '');
     const [phone, setPhone] = useState(initialUser.phone || '');
 
+    const [focusedField, setFocusedField] = useState(null);
     const [submitting, setSubmitting] = useState(false);
     const [errors, setErrors] = useState({});
 
@@ -70,7 +71,7 @@ export default function EditProfile() {
                 phone: phone.trim(),
             };
 
-            const response = await axios.put(
+            await axios.put(
                 `${baseUrl}/api/user/profile`,
                 payload,
                 {
@@ -102,43 +103,74 @@ export default function EditProfile() {
         }
     };
 
-    const renderField = (label, value, onChangeText, options = {}) => (
-        <View style={styles.field}>
-            <Text style={styles.label}>{label}</Text>
+    const renderField = (label, value, onChangeText, iconName, options = {}) => {
+        const isFocused = focusedField === options.key;
+        const hasError = !!errors[options.key];
 
-            <View style={[styles.inputWrapper, errors[options.key] && styles.inputWrapperError]}>
-                <TextInput
-                    value={value}
-                    onChangeText={(text) => {
-                        onChangeText(text);
-                        if (errors[options.key]) {
-                            setErrors((prev) => ({ ...prev, [options.key]: null }));
-                        }
-                    }}
-                    placeholder={options.placeholder}
-                    placeholderTextColor="#8b8b8b"
-                    style={styles.input}
-                    autoCapitalize={options.autoCapitalize || 'sentences'}
-                    keyboardType={options.keyboardType || 'default'}
-                />
+        return (
+            <View style={styles.field}>
+                <Text style={styles.label}>{label}</Text>
+
+                <View
+                    style={[
+                        styles.inputWrapper,
+                        isFocused && styles.inputWrapperFocused,
+                        hasError && styles.inputWrapperError,
+                    ]}
+                >
+                    <Ionicons
+                        name={iconName}
+                        size={18}
+                        color={hasError ? '#E53E3E' : isFocused ? '#0F2C59' : '#94A3B8'}
+                        style={styles.fieldIcon}
+                    />
+
+                    <TextInput
+                        value={value}
+                        onChangeText={(text) => {
+                            onChangeText(text);
+                            if (errors[options.key]) {
+                                setErrors((prev) => ({ ...prev, [options.key]: null }));
+                            }
+                        }}
+                        onFocus={() => setFocusedField(options.key)}
+                        onBlur={() => setFocusedField(null)}
+                        placeholder={options.placeholder}
+                        placeholderTextColor="#A0AEC0"
+                        style={styles.input}
+                        autoCapitalize={options.autoCapitalize || 'sentences'}
+                        keyboardType={options.keyboardType || 'default'}
+                    />
+                </View>
+
+                {hasError && (
+                    <Text style={styles.errorText}>{errors[options.key]}</Text>
+                )}
             </View>
+        );
+    };
 
-            {errors[options.key] && (
-                <Text style={styles.errorText}>{errors[options.key]}</Text>
-            )}
-        </View>
-    );
+    const getInitials = (str) => {
+        if (!str) return 'U';
+        return str.charAt(0).toUpperCase();
+    };
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
+            {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
-                    <Ionicons name="chevron-back" size={24} color="#111" />
+                <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    hitSlop={10}
+                    style={styles.backButton}
+                    activeOpacity={0.7}
+                >
+                    <Ionicons name="chevron-back-outline" size={22} color="#0F2C59" />
                 </TouchableOpacity>
 
-                <Text style={styles.title}>Edit Profile</Text>
+                <Text style={styles.title}>Edit Profil</Text>
 
-                <View style={{ width: 24 }} />
+                <View style={styles.headerPlaceholder} />
             </View>
 
             <ScrollView
@@ -149,30 +181,45 @@ export default function EditProfile() {
                 showsVerticalScrollIndicator={false}
                 keyboardShouldPersistTaps="handled"
             >
-                {renderField('Nama Lengkap', name, setName, {
-                    key: 'name',
-                    placeholder: 'Masukkan nama lengkap',
-                })}
+                {/* Profile Header Avatar */}
+                <View style={styles.avatarSection}>
+                    <View style={styles.avatarWrapper}>
+                        <Text style={styles.avatarText}>{getInitials(name)}</Text>
+                        <View style={styles.avatarBadge}>
+                            <Ionicons name="camera" size={14} color="#FFFFFF" />
+                        </View>
+                    </View>
+                    <Text style={styles.avatarSubtext}>Perbarui informasi profil Anda</Text>
+                </View>
 
-                {renderField('Username', username, setUsername, {
-                    key: 'username',
-                    placeholder: 'Masukkan username',
-                    autoCapitalize: 'none',
-                })}
+                {/* Form Card Container */}
+                <View style={styles.cardForm}>
+                    {renderField('Nama Lengkap', name, setName, 'person-outline', {
+                        key: 'name',
+                        placeholder: 'Masukkan nama lengkap',
+                    })}
 
-                {renderField('Email', email, setEmail, {
-                    key: 'email',
-                    placeholder: 'nama@email.com',
-                    autoCapitalize: 'none',
-                    keyboardType: 'email-address',
-                })}
+                    {renderField('Username', username, setUsername, 'at-outline', {
+                        key: 'username',
+                        placeholder: 'Masukkan username',
+                        autoCapitalize: 'none',
+                    })}
 
-                {renderField('Nomor Telepon', phone, setPhone, {
-                    key: 'phone',
-                    placeholder: '08xxxxxxxxxx',
-                    keyboardType: 'phone-pad',
-                })}
+                    {renderField('Email', email, setEmail, 'mail-outline', {
+                        key: 'email',
+                        placeholder: 'nama@email.com',
+                        autoCapitalize: 'none',
+                        keyboardType: 'email-address',
+                    })}
 
+                    {renderField('Nomor Telepon', phone, setPhone, 'call-outline', {
+                        key: 'phone',
+                        placeholder: '08xxxxxxxxxx',
+                        keyboardType: 'phone-pad',
+                    })}
+                </View>
+
+                {/* Submit Button */}
                 <TouchableOpacity
                     style={[styles.saveButton, submitting && styles.saveButtonDisabled]}
                     onPress={handleSave}
@@ -180,7 +227,7 @@ export default function EditProfile() {
                     activeOpacity={0.85}
                 >
                     {submitting ? (
-                        <ActivityIndicator color="#fff" />
+                        <ActivityIndicator color="#FFFFFF" />
                     ) : (
                         <Text style={styles.saveText}>Simpan Perubahan</Text>
                     )}
@@ -191,37 +238,167 @@ export default function EditProfile() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff' },
+    container: {
+        flex: 1,
+        backgroundColor: '#F0F2F5', // Light Cool Grey
+    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
         paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e5e5',
     },
-    title: { fontSize: 17, fontWeight: '700', color: '#111' },
-    content: { paddingHorizontal: 20, paddingTop: 20 },
-    field: { marginBottom: 18 },
-    label: { fontSize: 13, fontWeight: '600', color: '#111', marginBottom: 8 },
-    inputWrapper: {
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#FFFFFF',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#0F2C59', // Royal Navy Blue
+        letterSpacing: -0.3,
+    },
+    headerPlaceholder: {
+        width: 40,
+    },
+    content: {
+        paddingHorizontal: 20,
+        paddingTop: 10,
+    },
+
+    /* Avatar Section */
+    avatarSection: {
+        alignItems: 'center',
+        marginVertical: 16,
+    },
+    avatarWrapper: {
+        width: 80,
+        height: 80,
+        borderRadius: 40,
+        backgroundColor: '#0F2C59',
+        alignItems: 'center',
+        justifyContent: 'center',
+        position: 'relative',
+        shadowColor: '#0F2C59',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 4,
+    },
+    avatarText: {
+        fontSize: 32,
+        fontWeight: '800',
+        color: '#FFFFFF',
+    },
+    avatarBadge: {
+        position: 'absolute',
+        bottom: 0,
+        right: 0,
+        backgroundColor: '#00A3FF',
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
+    },
+    avatarSubtext: {
+        fontSize: 12,
+        fontWeight: '500',
+        color: '#64748B',
+        marginTop: 10,
+    },
+
+    /* Form Styles */
+    cardForm: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 18,
         borderWidth: 1,
-        borderColor: '#e5e5e5',
-        borderRadius: 12,
+        borderColor: '#E2E8F0',
+        shadowColor: '#0F2C59',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
+        elevation: 3,
+        marginBottom: 20,
+    },
+    field: {
+        marginBottom: 16,
+    },
+    label: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#0F2C59',
+        marginBottom: 8,
+        letterSpacing: 0.2,
+    },
+    inputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        borderRadius: 14,
         paddingHorizontal: 14,
         paddingVertical: 12,
+        backgroundColor: '#F8FAFC',
     },
-    inputWrapperError: { borderColor: '#d13c3c' },
-    input: { fontSize: 14, color: '#111', padding: 0 },
-    errorText: { fontSize: 12, color: '#d13c3c', marginTop: 6 },
+    inputWrapperFocused: {
+        borderColor: '#0F2C59',
+        backgroundColor: '#FFFFFF',
+    },
+    inputWrapperError: {
+        borderColor: '#E53E3E',
+        backgroundColor: '#FFF5F5',
+    },
+    fieldIcon: {
+        marginRight: 10,
+    },
+    input: {
+        flex: 1,
+        fontSize: 14,
+        color: '#1A202C',
+        fontWeight: '500',
+        padding: 0,
+    },
+    errorText: {
+        fontSize: 11,
+        color: '#E53E3E',
+        marginTop: 5,
+        fontWeight: '600',
+    },
+
+    /* Save Button */
     saveButton: {
-        backgroundColor: '#111',
-        borderRadius: 12,
+        backgroundColor: '#0F2C59',
+        borderRadius: 14,
         paddingVertical: 15,
         alignItems: 'center',
-        marginTop: 8,
+        justifyContent: 'center',
+        shadowColor: '#0F2C59',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+        elevation: 3,
     },
-    saveButtonDisabled: { opacity: 0.6 },
-    saveText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+    saveButtonDisabled: {
+        opacity: 0.6,
+    },
+    saveText: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '700',
+        letterSpacing: 0.3,
+    },
 });

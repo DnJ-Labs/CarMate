@@ -192,32 +192,7 @@ export function DetailVehicle() {
                     Detail Vehicle
                 </Text>
 
-                <View style={styles.headerActions}>
-                    <TouchableOpacity
-                        onPress={handleEdit}
-                        style={styles.actionButton}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons
-                            name="create-outline"
-                            size={20}
-                            color="#0F2C59"
-                        />
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        onPress={() => setDeleteModalVisible(true)}
-                        style={styles.actionButton}
-                        disabled={deleting}
-                        activeOpacity={0.7}
-                    >
-                        <Ionicons
-                            name="trash-outline"
-                            size={20}
-                            color="#E53E3E"
-                        />
-                    </TouchableOpacity>
-                </View>
+                <View style={styles.headerPlaceholder} />
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
@@ -277,6 +252,36 @@ export function DetailVehicle() {
                             <Text style={styles.value}>{vehicle?.plate_number || '-'}</Text>
                         </View>
                     </View>
+                </View>
+
+                {/* Edit & Delete Actions */}
+                <View style={styles.editDeleteRow}>
+                    <TouchableOpacity
+                        onPress={handleEdit}
+                        style={styles.editButton}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons
+                            name="create-outline"
+                            size={18}
+                            color="#0F2C59"
+                        />
+                        <Text style={styles.editButtonText}>Edit</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                        onPress={() => setDeleteModalVisible(true)}
+                        style={styles.deleteOutlineButton}
+                        disabled={deleting}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons
+                            name="trash-outline"
+                            size={18}
+                            color="#E53E3E"
+                        />
+                        <Text style={styles.deleteOutlineButtonText}>Delete</Text>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Book Action Button */}
@@ -394,26 +399,6 @@ const styles = StyleSheet.create({
         color: '#0F2C59', // Royal Navy Blue
     },
 
-    headerActions: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 10,
-    },
-
-    actionButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#FFFFFF',
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#A3B1C6',
-        shadowOffset: { width: 2, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-
     headerPlaceholder: {
         width: 40,
     },
@@ -512,6 +497,50 @@ const styles = StyleSheet.create({
         height: 1,
         backgroundColor: '#F1F5F9',
         marginVertical: 10,
+    },
+
+    /* Edit & Delete Row (below info card) */
+    editDeleteRow: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+
+    editButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 12,
+        borderRadius: 14,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1.5,
+        borderColor: '#0F2C59',
+    },
+
+    editButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#0F2C59',
+    },
+
+    deleteOutlineButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        paddingVertical: 12,
+        borderRadius: 14,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1.5,
+        borderColor: '#E53E3E',
+    },
+
+    deleteOutlineButtonText: {
+        fontSize: 14,
+        fontWeight: '600',
+        color: '#E53E3E',
     },
 
     /* Book Button */

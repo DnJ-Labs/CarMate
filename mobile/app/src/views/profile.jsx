@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import axios from "axios";
@@ -16,13 +16,18 @@ import * as SecureStore from 'expo-secure-store';
 import baseUrl from "../../constant/baseUrl";
 import { AuthContext } from '../context/AuthContext';
 
+const TAB_BAR_HEIGHT = 40; // kira-kira tinggi tab bar floating + jarak amannya
+
 export default function Profile() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const authContext = useContext(AuthContext);
   const { setIsLogin } = authContext;
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+
+  const listBottomPadding = TAB_BAR_HEIGHT + insets.bottom;
 
   const fetchProfile = async () => {
     try {
@@ -85,7 +90,10 @@ export default function Profile() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView
-        contentContainerStyle={styles.contentContainer}
+        contentContainerStyle={[
+          styles.contentContainer,
+          { paddingBottom: listBottomPadding },
+        ]}
         showsVerticalScrollIndicator={false}
       >
         {/* Header */}

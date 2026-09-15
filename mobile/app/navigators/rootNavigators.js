@@ -1,4 +1,3 @@
-
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { AddVehicle } from '../src/views/addVehicle';
@@ -14,14 +13,11 @@ import BookingDetail from '../src/views/bookingDetail';
 import PaymentWebView from '../src/views/paymentWebView';
 import Notifications from '../src/views/notifications';
 import Profile from '../src/views/profile';
-
-
-
+import WorkshopDetail from '../src/views/workshopDetail';
 
 const Stack = createNativeStackNavigator();
 
 export default function RootNavigator() {
-
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="MainTabs" component={MainNavigator} />
@@ -35,6 +31,7 @@ export default function RootNavigator() {
       <Stack.Screen name="BookingDetail" component={BookingDetail} />
       <Stack.Screen name="PaymentWebView" component={PaymentWebView} />
       <Stack.Screen name="Notifications" component={Notifications} />
+      <Stack.Screen name="Profile" component={Profile} />
       <Stack.Screen
         name="SelectWorkshop"
         component={SelectWorkshop}
@@ -50,18 +47,21 @@ export default function RootNavigator() {
         component={SelectVehicle}
         options={{ headerShown: false }}
       />
-      
       <Stack.Screen
-                name="EditProfile"
-                component={EditProfile}
-                options={{ headerShown: false }}
-            />
-
-            <Stack.Screen
-                name="EditVehicle"
-                component={EditVehicle}
-                options={{ headerShown: false }}
-            />
+        name="EditProfile"
+        component={EditProfile}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="EditVehicle"
+        component={EditVehicle}
+        options={{ headerShown: false }}
+      />
+      <Stack.Screen
+        name="WorkshopDetail"
+        component={WorkshopDetail}
+        options={{ headerShown: false }}
+      />
     </Stack.Navigator>
   );
 }

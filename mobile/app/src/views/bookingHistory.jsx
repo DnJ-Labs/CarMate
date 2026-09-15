@@ -3,23 +3,52 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
+  StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
+import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
-import styles from "../styles/bookingHistoryStyles";
 import baseUrl from "../../constant/baseUrl";
 import socket from "../../socket";
 
+/* ---------------------------------------------------------
+ * NEUMORPHIC MINIMALIST PALETTE
+ * ------------------------------------------------------- */
+const COLORS = {
+  background: "#F0F2F5", // Light Cool Grey
+  surface: "#FFFFFF",
+  accent: "#0F2C59", // Royal Navy Blue
+  border: "#E2E8F0",
+  textMuted: "#64748B",
+  textDark: "#1A202C",
+};
+
+const STATUS_STYLES = {
+  pending: { bg: "#FFF7E6", text: "#B7791F" },
+  confirmed: { bg: "#EAF1FF", text: "#0F2C59" },
+  checked_in: { bg: "#EEF2FF", text: "#4338CA" },
+  onprogress: { bg: "#FFF1E6", text: "#C2410C" },
+  done: { bg: "#ECFDF3", text: "#15803D" },
+  cancelled: { bg: "#FEECEC", text: "#E53E3E" },
+};
+
+const TAB_BAR_HEIGHT = 100; // kira-kira tinggi tab bar floating + jarak amannya
+
 export default function BookingHistory() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  const listBottomPadding = TAB_BAR_HEIGHT + insets.bottom;
+
+  // Socket Listener untuk Real-time Status Update
   useEffect(() => {
     const handleBookingStatus = (data) => {
       console.log("BOOKING HISTORY STATUS UPDATE:", data);
@@ -120,26 +149,7 @@ export default function BookingHistory() {
   };
 
   const getStatusStyle = (status) => {
-    switch (status) {
-      case "confirmed":
-        return styles.statusConfirmed;
-
-      case "checked_in":
-        return styles.statusCheckedIn;
-
-      case "onprogress":
-        return styles.statusOnProgress;
-
-      case "done":
-        return styles.statusDone;
-
-      case "cancelled":
-        return styles.statusCancelled;
-
-      case "pending":
-      default:
-        return styles.statusPending;
-    }
+    return STATUS_STYLES[status] || STATUS_STYLES.pending;
   };
 
   const formatDate = (date) => {
@@ -167,6 +177,8 @@ export default function BookingHistory() {
   };
 
   const renderBooking = ({ item }) => {
+    const statusStyle = getStatusStyle(item.status);
+
     return (
       <TouchableOpacity
         style={styles.card}
@@ -180,12 +192,13 @@ export default function BookingHistory() {
         <View style={styles.cardHeader}>
           <View>
             <Text style={styles.bookingLabel}>BOOKING</Text>
-
             <Text style={styles.bookingCode}>{item.booking_code || "-"}</Text>
           </View>
 
-          <View style={[styles.statusBadge, getStatusStyle(item.status)]}>
-            <Text style={styles.statusText}>
+          <View
+            style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}
+          >
+            <Text style={[styles.statusText, { color: statusStyle.text }]}>
               {item.status?.replace("_", " ").toUpperCase() || "-"}
             </Text>
           </View>
@@ -194,35 +207,44 @@ export default function BookingHistory() {
         <View style={styles.divider} />
 
         <View style={styles.infoRow}>
+          <View style={styles.infoIconWrapper}>
+            <Ionicons name="calendar-outline" size={16} color={COLORS.accent} />
+          </View>
           <Text style={styles.infoLabel}>Date</Text>
-
           <Text style={styles.infoValue}>{formatDate(item.booking_date)}</Text>
         </View>
 
         <View style={styles.infoRow}>
+          <View style={styles.infoIconWrapper}>
+            <Ionicons name="time-outline" size={16} color={COLORS.accent} />
+          </View>
           <Text style={styles.infoLabel}>Time</Text>
-
-          <Text style={styles.infoValue}>{item.booking_time_slot || "-"}</Text>
+          <Text style={styles.infoValue}>
+            {item.booking_time_slot || "-"}
+          </Text>
         </View>
 
         <View style={styles.infoRow}>
+          <View style={styles.infoIconWrapper}>
+            <Ionicons name="car-outline" size={16} color={COLORS.accent} />
+          </View>
           <Text style={styles.infoLabel}>Vehicle</Text>
-
           <Text style={styles.infoValue}>
             {item.vehicle ? `${item.vehicle.brand} ${item.vehicle.model}` : "-"}
           </Text>
         </View>
 
         <View style={styles.infoRow}>
+          <View style={styles.infoIconWrapper}>
+            <Ionicons name="business-outline" size={16} color={COLORS.accent} />
+          </View>
           <Text style={styles.infoLabel}>Workshop</Text>
-
           <Text style={styles.infoValue}>{item.workshop?.name || "-"}</Text>
         </View>
 
         {item.total_price !== null && item.total_price !== undefined && (
           <View style={styles.totalContainer}>
             <Text style={styles.totalLabel}>Total</Text>
-
             <Text style={styles.totalValue}>
               {formatPrice(item.total_price)}
             </Text>
@@ -234,43 +256,237 @@ export default function BookingHistory() {
 
   if (loading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" />
-      </View>
+      <SafeAreaView style={styles.loadingContainer} edges={["top"]}>
+        <ActivityIndicator size="large" color={COLORS.accent} />
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <View style={styles.header}>
+        <Text style={styles.title}>Booking History</Text>
+        <Text style={styles.subtitle}>View your service bookings</Text>
+      </View>
+
       <FlatList
         data={bookings}
         keyExtractor={(item) => item._id}
         renderItem={renderBooking}
         contentContainerStyle={[
           styles.contentContainer,
+          { paddingBottom: listBottomPadding },
           bookings.length === 0 && styles.emptyContent,
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        ListHeaderComponent={
-          <View style={styles.header}>
-            <Text style={styles.title}>Booking History</Text>
-
-            <Text style={styles.subtitle}>View your service bookings</Text>
-          </View>
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={COLORS.accent}
+          />
         }
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
+            <View style={styles.emptyIconWrapper}>
+              <Ionicons
+                name="document-text-outline"
+                size={36}
+                color={COLORS.textMuted}
+              />
+            </View>
             <Text style={styles.emptyTitle}>No bookings yet</Text>
-
             <Text style={styles.emptyText}>
               Your booking history will appear here.
             </Text>
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+  },
+
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: COLORS.background,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 20,
+    backgroundColor: COLORS.background,
+  },
+
+  title: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: COLORS.accent,
+  },
+
+  subtitle: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    marginTop: 4,
+  },
+
+  contentContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: 28,
+    gap: 16,
+  },
+
+  emptyContent: {
+    flexGrow: 1,
+  },
+
+  /* Booking Card */
+  card: {
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+
+    // soft drop shadow
+    shadowColor: "#64748B",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+
+  cardHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+  },
+
+  bookingLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: COLORS.textMuted,
+    letterSpacing: 0.5,
+  },
+
+  bookingCode: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.textDark,
+    marginTop: 2,
+  },
+
+  statusBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+
+  statusText: {
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.3,
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: "#F1F5F9",
+    marginVertical: 14,
+  },
+
+  infoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+
+  infoIconWrapper: {
+    width: 28,
+    height: 28,
+    borderRadius: 10,
+    backgroundColor: "#F0F4F8",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 10,
+  },
+
+  infoLabel: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    flex: 1,
+  },
+
+  infoValue: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.textDark,
+  },
+
+  totalContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 8,
+    paddingTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: "#F1F5F9",
+  },
+
+  totalLabel: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.textMuted,
+  },
+
+  totalValue: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.accent,
+  },
+
+  /* Empty State */
+  emptyContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+  },
+
+  emptyIconWrapper: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: COLORS.surface,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+
+    shadowColor: "#64748B",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+
+  emptyTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.textDark,
+    marginBottom: 6,
+  },
+
+  emptyText: {
+    fontSize: 13,
+    color: COLORS.textMuted,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+});
