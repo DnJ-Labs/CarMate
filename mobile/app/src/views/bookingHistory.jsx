@@ -35,7 +35,41 @@ export default function BookingHistory() {
         },
       });
 
-      const sortedBookings = [...response.data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+      const bookingsWithDetails = await Promise.all(
+        response.data.map(async (booking) => {
+          try {
+            const [vehicleResponse, workshopResponse] = await Promise.all([
+              axios.get(`${baseUrl}/api/vehicles/${booking.vehicle_id}`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }),
+              axios.get(`${baseUrl}/api/workshop/${booking.bengkel_id}`, {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                },
+              }),
+            ]);
+
+            return {
+              ...booking,
+              vehicle: vehicleResponse.data,
+              workshop: workshopResponse.data,
+            };
+          } catch (error) {
+            console.log(
+              "GET BOOKING DETAIL DATA ERROR:",
+              error.response?.data || error.message,
+            );
+
+            return booking;
+          }
+        }),
+      );
+
+      const sortedBookings = [...bookingsWithDetails].sort(
+        (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
+      );
 
       setBookings(sortedBookings);
     } catch (error) {
@@ -149,13 +183,15 @@ export default function BookingHistory() {
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Vehicle</Text>
 
-          <Text style={styles.infoValue}>{item.vehicle_id || "-"}</Text>
+          <Text style={styles.infoValue}>
+            {item.vehicle ? `${item.vehicle.brand} ${item.vehicle.model}` : "-"}
+          </Text>
         </View>
 
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Workshop</Text>
 
-          <Text style={styles.infoValue}>{item.bengkel_id || "-"}</Text>
+          <Text style={styles.infoValue}>{item.workshop?.name || "-"}</Text>
         </View>
 
         {item.total_price !== null && item.total_price !== undefined && (

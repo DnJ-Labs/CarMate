@@ -15,8 +15,9 @@ import {
 } from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
-import * as FileSystem from "expo-file-system";
-import * as Sharing from "expo-sharing";
+import { Platform } from "react-native";
+import { File, Paths } from "expo-file-system";
+import * as FileSystemLegacy from "expo-file-system/legacy";
 import axios from "axios";
 
 import baseUrl from "../../constant/baseUrl";
@@ -30,10 +31,11 @@ export default function BookingDetail() {
 
   const [booking, setBooking] = useState(null);
   const [payment, setPayment] = useState(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [paymentLoading, setPaymentLoading] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
 
   const fetchBookingDetail = async () => {
@@ -64,7 +66,26 @@ export default function BookingDetail() {
         },
       );
 
-      setBooking(bookingResponse.data);
+      const bookingData = bookingResponse.data;
+
+      const [vehicleResponse, workshopResponse] = await Promise.all([
+        axios.get(`${baseUrl}/api/vehicles/${bookingData.vehicle_id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+        axios.get(`${baseUrl}/api/workshop/${bookingData.bengkel_id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+      ]);
+
+      setBooking({
+        ...bookingData,
+        vehicle: vehicleResponse.data,
+        workshop: workshopResponse.data,
+      });
 
       // =========================
       // GET PAYMENT
@@ -212,7 +233,16 @@ export default function BookingDetail() {
   // CREATE PAYMENT
   // =========================
 
-  const handlePaymentOption = async (method) => {
+  const handlePaymentOption = (method) => {
+    setSelectedPaymentMethod(method);
+  };
+
+  const handleConfirmPayment = async () => {
+    if (!selectedPaymentMethod) {
+      Alert.alert("Payment Method", "Please select a payment method first.");
+      return;
+    }
+
     try {
       const token = await SecureStore.getItemAsync("access_token");
 
@@ -226,7 +256,7 @@ export default function BookingDetail() {
       const response = await axios.post(
         `${baseUrl}/api/bookings/${bookingId}/payment`,
         {
-          payment_method: method,
+          payment_method: selectedPaymentMethod,
         },
         {
           headers: {
@@ -236,9 +266,10 @@ export default function BookingDetail() {
       );
 
       // =========================
-      // PAY ONLINE - MIDTRANS
+      // PAY ONLINE
       // =========================
-      if (method === "midtrans") {
+
+      if (selectedPaymentMethod === "midtrans") {
         const redirectUrl = response.data?.redirect_url;
 
         if (!redirectUrl) {
@@ -253,10 +284,12 @@ export default function BookingDetail() {
       }
 
       // =========================
-      // PAY AT WORKSHOP CASHIER
+      // CASHIER
       // =========================
-      if (method === "cash") {
+
+      if (selectedPaymentMethod === "cash") {
         setPayment(response.data?.payment || null);
+        setSelectedPaymentMethod(null);
 
         Alert.alert(
           "Cash Payment",
@@ -283,9 +316,15 @@ export default function BookingDetail() {
   // =========================
 
   const handleDownloadReport = async () => {
-    try {
-      setDownloadingReport(true);
+    if (booking?.status !== "done") {
+      Alert.alert(
+        "Report Unavailable",
+        "Service report is only available after the service is completed.",
+      );
+      return;
+    }
 
+    try {
       const token = await SecureStore.getItemAsync("access_token");
 
       if (!token) {
@@ -293,50 +332,80 @@ export default function BookingDetail() {
         return;
       }
 
-      if (booking.status !== "done") {
-        Alert.alert(
-          "Report Unavailable",
-          "Service report is only available after the service is completed.",
-        );
-        return;
-      }
+      setDownloadingReport(true);
 
       const fileName = `CarMate-${booking.booking_code}.pdf`;
 
-      const fileUri = FileSystem.documentDirectory + fileName;
+      // Download PDF dari backend ke temporary/cache storage
+      const tempFile = new File(Paths.cache, fileName);
 
-      const downloadResult = await FileSystem.downloadAsync(
+      const downloadedFile = await File.downloadFileAsync(
         `${baseUrl}/api/bookings/${bookingId}/report`,
-        fileUri,
+        tempFile,
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
+          idempotent: true,
         },
       );
 
-      if (downloadResult.status !== 200) {
-        throw new Error("Failed to download report");
+      if (!downloadedFile.exists) {
+        throw new Error("Failed to download report.");
       }
 
-      const canShare = await Sharing.isAvailableAsync();
+      // =========================
+      // ANDROID
+      // =========================
+      if (Platform.OS === "android") {
+        const { StorageAccessFramework } = FileSystemLegacy;
 
-      if (canShare) {
-        await Sharing.shareAsync(downloadResult.uri, {
-          mimeType: "application/pdf",
-          dialogTitle: "CarMate Service Report",
-          UTI: "com.adobe.pdf",
-        });
-      } else {
-        Alert.alert("Report Downloaded", `Report saved as ${fileName}`);
+        const permissions =
+          await StorageAccessFramework.requestDirectoryPermissionsAsync();
+
+        if (!permissions.granted) {
+          Alert.alert(
+            "Download Cancelled",
+            "Please select a folder to save the report.",
+          );
+          return;
+        }
+
+        const fileUri = await StorageAccessFramework.createFileAsync(
+          permissions.directoryUri,
+          fileName,
+          "application/pdf",
+        );
+
+        const fileBytes = await downloadedFile.bytes();
+
+        const destinationFile = new File(fileUri);
+
+        destinationFile.write(fileBytes);
+
+        Alert.alert(
+          "Report Downloaded",
+          `${fileName} has been saved successfully.`,
+        );
+
+        return;
+      }
+
+      // =========================
+      // IOS
+      // =========================
+      if (Platform.OS === "ios") {
+        await downloadedFile.preview();
+
+        return;
       }
     } catch (error) {
       console.log(
         "DOWNLOAD REPORT ERROR:",
-        error.response?.data || error.message,
+        error?.response?.data || error?.message || error,
       );
 
-      Alert.alert("Error", "Failed to download service report.");
+      Alert.alert("Download Failed", "Failed to download service report.");
     } finally {
       setDownloadingReport(false);
     }
@@ -425,28 +494,30 @@ export default function BookingDetail() {
                 {/* PAY ONLINE */}
 
                 <TouchableOpacity
-                  style={styles.paymentOption}
+                  style={[
+                    styles.paymentOption,
+                    selectedPaymentMethod === "midtrans" &&
+                      styles.paymentOptionSelected,
+                  ]}
                   activeOpacity={0.8}
                   onPress={() => handlePaymentOption("midtrans")}
                   disabled={paymentLoading}
                 >
-                  {paymentLoading ? (
-                    <ActivityIndicator />
-                  ) : (
-                    <>
-                      <Text style={styles.paymentOptionTitle}>Pay Online</Text>
+                  <Text style={styles.paymentOptionTitle}>Pay Online</Text>
 
-                      <Text style={styles.paymentOptionDescription}>
-                        Continue to payment
-                      </Text>
-                    </>
-                  )}
+                  <Text style={styles.paymentOptionDescription}>
+                    Continue to payment
+                  </Text>
                 </TouchableOpacity>
 
                 {/* CASHIER */}
 
                 <TouchableOpacity
-                  style={styles.paymentOption}
+                  style={[
+                    styles.paymentOption,
+                    selectedPaymentMethod === "cash" &&
+                      styles.paymentOptionSelected,
+                  ]}
                   activeOpacity={0.8}
                   onPress={() => handlePaymentOption("cash")}
                   disabled={paymentLoading}
@@ -459,6 +530,25 @@ export default function BookingDetail() {
                     Pay directly at the workshop
                   </Text>
                 </TouchableOpacity>
+
+                {/* CONFIRM */}
+
+                {selectedPaymentMethod && (
+                  <TouchableOpacity
+                    style={styles.confirmPaymentButton}
+                    activeOpacity={0.8}
+                    onPress={handleConfirmPayment}
+                    disabled={paymentLoading}
+                  >
+                    {paymentLoading ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={styles.confirmPaymentButtonText}>
+                        Confirm Payment
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                )}
               </>
             )}
 
@@ -553,9 +643,24 @@ export default function BookingDetail() {
           <Text style={styles.sectionTitle}>Vehicle</Text>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Vehicle ID</Text>
+            <Text style={styles.infoLabel}>Brand</Text>
+            <Text style={styles.infoValue}>
+              {booking.vehicle?.brand || "-"}
+            </Text>
+          </View>
 
-            <Text style={styles.infoValue}>{booking.vehicle_id || "-"}</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Model</Text>
+            <Text style={styles.infoValue}>
+              {booking.vehicle?.model || "-"}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Plate Number</Text>
+            <Text style={styles.infoValue}>
+              {booking.vehicle?.plate_number || "-"}
+            </Text>
           </View>
         </View>
 
@@ -567,9 +672,17 @@ export default function BookingDetail() {
           <Text style={styles.sectionTitle}>Workshop</Text>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Workshop ID</Text>
+            <Text style={styles.infoLabel}>Name</Text>
+            <Text style={styles.infoValue}>
+              {booking.workshop?.name || "-"}
+            </Text>
+          </View>
 
-            <Text style={styles.infoValue}>{booking.bengkel_id || "-"}</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Address</Text>
+            <Text style={styles.infoValue}>
+              {booking.workshop?.address || "-"}
+            </Text>
           </View>
         </View>
 

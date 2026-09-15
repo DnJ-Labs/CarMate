@@ -295,4 +295,24 @@ export default StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
   },
+  paymentOptionSelected: {
+    borderWidth: 2,
+    borderColor: "#4F46E5",
+    backgroundColor: "#EEF2FF",
+  },
+
+  confirmPaymentButton: {
+    marginTop: 16,
+    height: 52,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#4F46E5",
+  },
+
+  confirmPaymentButtonText: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#FFFFFF",
+  },
 });
