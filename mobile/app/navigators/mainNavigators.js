@@ -119,10 +119,12 @@ export default function MainNavigator() {
         component={Profile}
         options={{
           tabBarLabel: "Profile",
-
           tabBarIcon: ({ color, size }) => (
             <Feather name="user" size={size} color={color} />
           ),
+          tabBarStyle: {
+            display: "none"
+          }
         }}
       />
     </Tab.Navigator>

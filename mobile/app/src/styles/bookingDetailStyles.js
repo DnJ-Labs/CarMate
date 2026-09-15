@@ -315,24 +315,35 @@ export default StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
   },
-  barcodeContainer: {
+  barcodeSection: {
     alignItems: "center",
-    marginTop: 8,
+    marginBottom: 32,
   },
 
-  barcodeCode: {
-    marginTop: 14,
-    fontSize: 15,
-    fontWeight: "700",
+  barcodeTitle: {
+    width: "100%",
+    fontSize: 28,
+    fontWeight: "800",
     color: "#111827",
+    textAlign: "center",
+    marginBottom: 16,
+  },
+
+  bookingCode: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#6B7280",
+    marginTop: 14,
+    textAlign: "center",
     letterSpacing: 1,
   },
 
   barcodeDescription: {
-    marginTop: 8,
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 14,
+    lineHeight: 20,
     color: "#6B7280",
     textAlign: "center",
+    marginTop: 16,
+    marginBottom: 24,
   },
 });

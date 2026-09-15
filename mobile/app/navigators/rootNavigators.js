@@ -13,6 +13,7 @@ import { EditVehicle } from '../src/views/editVehicle';
 import BookingDetail from '../src/views/bookingDetail';
 import PaymentWebView from '../src/views/paymentWebView';
 import Notifications from '../src/views/notifications';
+import Profile from '../src/views/profile';
 
 
 
@@ -49,6 +50,7 @@ export default function RootNavigator() {
         component={SelectVehicle}
         options={{ headerShown: false }}
       />
+      
       <Stack.Screen
                 name="EditProfile"
                 component={EditProfile}
