@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -19,16 +19,12 @@ import { Platform } from "react-native";
 import { File, Paths } from "expo-file-system";
 import * as FileSystemLegacy from "expo-file-system/legacy";
 import axios from "axios";
-
+import Barcode from "react-native-barcode-svg";
+import socket from "../../socket";
 import baseUrl from "../../constant/baseUrl";
 import styles from "../styles/bookingDetailStyles";
 
 export default function BookingDetail() {
-  const route = useRoute();
-  const navigation = useNavigation();
-
-  const bookingId = route?.params?.bookingId;
-
   const [booking, setBooking] = useState(null);
   const [payment, setPayment] = useState(null);
   const [paymentLoading, setPaymentLoading] = useState(false);
@@ -37,6 +33,36 @@ export default function BookingDetail() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
+  const route = useRoute();
+  const navigation = useNavigation();
+
+  const bookingId = route?.params?.bookingId;
+
+  useEffect(() => {
+    const handleBookingStatus = (data) => {
+      console.log("BOOKING STATUS UPDATE:", data);
+
+      // Pastikan update hanya untuk booking yang sedang dibuka
+      if (String(data.booking_id) !== String(bookingId)) {
+        return;
+      }
+
+      setBooking((prev) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          status: data.status,
+        };
+      });
+    };
+
+    socket.on("booking:status", handleBookingStatus);
+
+    return () => {
+      socket.off("booking:status", handleBookingStatus);
+    };
+  }, [bookingId]);
 
   const fetchBookingDetail = async () => {
     try {
@@ -475,6 +501,32 @@ export default function BookingDetail() {
             </Text>
           </View>
         </View>
+
+        {/* =========================
+            BARCODE
+        ========================= */}
+
+        {booking.booking_code && (
+          <View style={styles.barcodeSection}>
+            <Text style={styles.barcodeTitle}>Booking Barcode</Text>
+
+            <Barcode
+              value={String(booking.booking_code)}
+              format="CODE128"
+              height={80}
+              singleBarWidth={2}
+              maxWidth={320}
+              lineColor="#111827"
+              backgroundColor="#FFFFFF"
+            />
+
+            <Text style={styles.bookingCode}>{booking.booking_code}</Text>
+
+            <Text style={styles.barcodeDescription}>
+              Show this barcode at the workshop when you arrive.
+            </Text>
+          </View>
+        )}
 
         {/* =========================
             PAYMENT

@@ -163,6 +163,18 @@ export function Home() {
             style={styles.addVehicleButton}
             activeOpacity={0.8}
           >
+            <Ionicons name="add" size={22} color="#5b5be0" />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Notifications")}
+            style={styles.notificationButton}
+          >
+            <Ionicons name="notifications-outline" size={22} color="#111827" />
+          </TouchableOpacity>
+
+          <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
+            <Ionicons name="log-out-outline" size={22} color="#d13c3c" />
             <Ionicons name="add-outline" size={16} color="#FFFFFF" />
             <Text style={styles.addVehicleText}>Add Vehicle</Text>
           </TouchableOpacity>

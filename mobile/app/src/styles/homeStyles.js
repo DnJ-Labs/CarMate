@@ -212,6 +212,15 @@ const styles = StyleSheet.create({
     textAlign: "center",
     fontWeight: "500",
   },
+
+  notificationButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });
 
 export default styles;

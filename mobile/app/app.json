@@ -26,13 +26,15 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.ACCESS_FINE_LOCATION"
       ],
-      "package": "com.dhaifanazzaky.app"
+      "package": "com.dhaifanazzaky.app",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-secure-store",
+      "expo-notifications",
       [
         "expo-location",
         {
@@ -41,6 +43,11 @@
       ],
       "@react-native-community/datetimepicker",
       "expo-sharing"
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9d8aa340-019f-4562-a137-0a05173ea1f6"
+      }
+    }
   }
 }

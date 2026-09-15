@@ -10,8 +10,10 @@ import { BookingForm } from '../src/views/bookingForm';
 import { SelectVehicle } from '../src/views/selectVehicle';
 import EditProfile from '../src/views/editProfile';
 import { EditVehicle } from '../src/views/editVehicle';
-import BookingDetail from '../src/views/bookingDetai';
+import BookingDetail from '../src/views/bookingDetail';
 import PaymentWebView from '../src/views/paymentWebView';
+import Notifications from '../src/views/notifications';
+import Profile from '../src/views/profile';
 
 
 
@@ -32,6 +34,7 @@ export default function RootNavigator() {
       <Stack.Screen name="DetailVehicle" component={DetailVehicle} />
       <Stack.Screen name="BookingDetail" component={BookingDetail} />
       <Stack.Screen name="PaymentWebView" component={PaymentWebView} />
+      <Stack.Screen name="Notifications" component={Notifications} />
       <Stack.Screen
         name="SelectWorkshop"
         component={SelectWorkshop}
@@ -47,6 +50,7 @@ export default function RootNavigator() {
         component={SelectVehicle}
         options={{ headerShown: false }}
       />
+      
       <Stack.Screen
                 name="EditProfile"
                 component={EditProfile}

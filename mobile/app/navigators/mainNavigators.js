@@ -226,6 +226,9 @@ export default function MainNavigator() {
           tabBarIcon: ({ color, size }) => (
             <Feather name="user" size={size} color={color} strokeWidth={1.6} />
           ),
+          tabBarStyle: {
+            display: "none"
+          }
         }}
       />
     </Tab.Navigator>
