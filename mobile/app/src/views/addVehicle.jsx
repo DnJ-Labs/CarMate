@@ -8,10 +8,12 @@ import {
     ScrollView,
     ActivityIndicator,
     Alert,
+    Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import * as SecureStore from 'expo-secure-store';
+import * as ImagePicker from 'expo-image-picker';
 import axios from 'axios';
 import baseUrl from '../../constant/baseUrl';
 
@@ -19,9 +21,54 @@ export function AddVehicle({ navigation }) {
     const [brand, setBrand] = useState('');
     const [model, setModel] = useState('');
     const [plateNumber, setPlateNumber] = useState('');
-    const [vehiclesImg, setVehiclesImg] = useState('');
+    const [imageUri, setImageUri] = useState(null);
+    const [uploading, setUploading] = useState(false);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
+    const pickImage = async () => {
+        const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (!permission.granted) {
+            setError('Izin akses galeri dibutuhkan');
+            return;
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ImagePicker.MediaTypeOptions.Images,
+            quality: 0.7,
+        });
+
+        if (!result.canceled) {
+            setImageUri(result.assets[0].uri);
+        }
+    };
+
+    const uploadImage = async (token) => {
+        setUploading(true);
+        try {
+            const formData = new FormData();
+            formData.append('file', {
+                uri: imageUri,
+                name: `vehicle-${Date.now()}.jpg`,
+                type: 'image/jpeg',
+            });
+
+            const { data } = await axios.post(
+                `${baseUrl}/api/upload`,
+                formData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'multipart/form-data',
+                    },
+                }
+            );
+
+            return data.url;
+        } finally {
+            setUploading(false);
+        }
+    };
 
     const handleSubmit = async () => {
         if (!brand.trim() || !model.trim() || !plateNumber.trim()) {
@@ -40,13 +87,18 @@ export function AddVehicle({ navigation }) {
                 return;
             }
 
+            let vehiclesImg = '';
+            if (imageUri) {
+                vehiclesImg = await uploadImage(token);
+            }
+
             await axios.post(
                 `${baseUrl}/api/vehicles`,
                 {
                     brand: brand.trim(),
                     model: model.trim(),
                     plate_number: plateNumber.trim(),
-                    vehicles_img: vehiclesImg.trim() || undefined,
+                    vehicles_img: vehiclesImg,
                 },
                 {
                     headers: {
@@ -88,6 +140,18 @@ export function AddVehicle({ navigation }) {
                     </View>
                 )}
 
+                <Text style={styles.label}>FOTO KENDARAAN (OPSIONAL)</Text>
+                <TouchableOpacity style={styles.imagePicker} onPress={pickImage}>
+                    {imageUri ? (
+                        <Image source={{ uri: imageUri }} style={styles.previewImage} />
+                    ) : (
+                        <View style={styles.imagePlaceholder}>
+                            <Ionicons name="camera-outline" size={28} color="#8b8b8b" />
+                            <Text style={styles.imagePlaceholderText}>Pilih Foto</Text>
+                        </View>
+                    )}
+                </TouchableOpacity>
+
                 <Text style={styles.label}>BRAND</Text>
                 <TextInput
                     style={styles.input}
@@ -116,22 +180,12 @@ export function AddVehicle({ navigation }) {
                     autoCapitalize="characters"
                 />
 
-                <Text style={styles.label}>URL FOTO (OPSIONAL)</Text>
-                <TextInput
-                    style={styles.input}
-                    placeholder="https://..."
-                    placeholderTextColor="#8b8b8b"
-                    value={vehiclesImg}
-                    onChangeText={setVehiclesImg}
-                    autoCapitalize="none"
-                />
-
                 <TouchableOpacity
-                    style={[styles.submitButton, loading && styles.submitButtonDisabled]}
+                    style={[styles.submitButton, (loading || uploading) && styles.submitButtonDisabled]}
                     onPress={handleSubmit}
-                    disabled={loading}
+                    disabled={loading || uploading}
                 >
-                    {loading ? (
+                    {loading || uploading ? (
                         <ActivityIndicator size="small" color="#fff" />
                     ) : (
                         <Text style={styles.submitText}>Simpan Kendaraan</Text>
@@ -143,10 +197,7 @@ export function AddVehicle({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
+    container: { flex: 1, backgroundColor: '#fff' },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -156,20 +207,9 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#e5e5e5',
     },
-    backButton: {
-        padding: 6,
-        width: 34,
-    },
-    title: {
-        fontSize: 18,
-        fontWeight: '700',
-        color: '#111',
-    },
-    content: {
-        paddingHorizontal: 24,
-        paddingTop: 20,
-        paddingBottom: 40,
-    },
+    backButton: { padding: 6, width: 34 },
+    title: { fontSize: 18, fontWeight: '700', color: '#111' },
+    content: { paddingHorizontal: 24, paddingTop: 20, paddingBottom: 40 },
     errorBox: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -181,11 +221,7 @@ const styles = StyleSheet.create({
         padding: 12,
         marginBottom: 16,
     },
-    errorText: {
-        color: '#d13c3c',
-        fontSize: 13,
-        flex: 1,
-    },
+    errorText: { color: '#d13c3c', fontSize: 13, flex: 1 },
     label: {
         fontSize: 11,
         color: '#8b8b8b',
@@ -203,6 +239,21 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#111',
     },
+    imagePicker: {
+        borderWidth: 1,
+        borderColor: '#e5e5e5',
+        borderRadius: 12,
+        overflow: 'hidden',
+    },
+    imagePlaceholder: {
+        height: 140,
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        backgroundColor: '#f9f9f9',
+    },
+    imagePlaceholderText: { fontSize: 13, color: '#8b8b8b' },
+    previewImage: { width: '100%', height: 180 },
     submitButton: {
         backgroundColor: '#5b5be0',
         borderRadius: 14,
@@ -211,12 +262,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         marginTop: 28,
     },
-    submitButtonDisabled: {
-        opacity: 0.6,
-    },
-    submitText: {
-        color: '#fff',
-        fontSize: 15,
-        fontWeight: '700',
-    },
+    submitButtonDisabled: { opacity: 0.6 },
+    submitText: { color: '#fff', fontSize: 15, fontWeight: '700' },
 });
