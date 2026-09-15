@@ -2,12 +2,17 @@ import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  RefreshControl,
   ScrollView,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
-import { useFocusEffect, useRoute } from "@react-navigation/native";
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import * as SecureStore from "expo-secure-store";
 import * as FileSystem from "expo-file-system";
@@ -19,6 +24,7 @@ import styles from "../styles/bookingDetailStyles";
 
 export default function BookingDetail() {
   const route = useRoute();
+  const navigation = useNavigation();
 
   const bookingId = route?.params?.bookingId;
 
@@ -27,6 +33,7 @@ export default function BookingDetail() {
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
   const [downloadingReport, setDownloadingReport] = useState(false);
 
   const fetchBookingDetail = async () => {
@@ -47,7 +54,9 @@ export default function BookingDetail() {
         Authorization: `Bearer ${token}`,
       };
 
-      // Get booking detail
+      // =========================
+      // GET BOOKING DETAIL
+      // =========================
       const bookingResponse = await axios.get(
         `${baseUrl}/api/bookings/${bookingId}`,
         {
@@ -57,7 +66,9 @@ export default function BookingDetail() {
 
       setBooking(bookingResponse.data);
 
-      // Payment hanya tersedia setelah booking DONE
+      // =========================
+      // GET PAYMENT
+      // =========================
       if (bookingResponse.data.status === "done") {
         try {
           const paymentResponse = await axios.get(
@@ -69,7 +80,7 @@ export default function BookingDetail() {
 
           setPayment(paymentResponse.data);
         } catch (error) {
-          // Belum ada payment bukan error untuk UI
+          // Belum ada payment
           setPayment(null);
 
           console.log(
@@ -104,6 +115,10 @@ export default function BookingDetail() {
     await fetchBookingDetail();
   };
 
+  // =========================
+  // FORMAT DATE
+  // =========================
+
   const formatDate = (date) => {
     if (!date) return "-";
 
@@ -120,6 +135,10 @@ export default function BookingDetail() {
     });
   };
 
+  // =========================
+  // FORMAT PRICE
+  // =========================
+
   const formatPrice = (price) => {
     if (price === null || price === undefined) {
       return "-";
@@ -127,6 +146,10 @@ export default function BookingDetail() {
 
     return `Rp ${Number(price).toLocaleString("id-ID")}`;
   };
+
+  // =========================
+  // BOOKING STATUS STYLE
+  // =========================
 
   const getBookingStatusStyle = (status) => {
     switch (status) {
@@ -151,6 +174,10 @@ export default function BookingDetail() {
     }
   };
 
+  // =========================
+  // PAYMENT STATUS STYLE
+  // =========================
+
   const getPaymentStatusStyle = (status) => {
     switch (status) {
       case "paid":
@@ -165,6 +192,10 @@ export default function BookingDetail() {
     }
   };
 
+  // =========================
+  // PAYMENT METHOD LABEL
+  // =========================
+
   const getPaymentMethodLabel = (method) => {
     if (method === "midtrans") {
       return "Pay Online";
@@ -177,24 +208,79 @@ export default function BookingDetail() {
     return "-";
   };
 
-  const handlePaymentOption = (method) => {
-    if (method === "midtrans") {
-      Alert.alert("Pay Online", "Midtrans payment will be opened here.");
+  // =========================
+  // CREATE PAYMENT
+  // =========================
 
-      // WebView Midtrans kita sambungkan di step berikutnya.
-      return;
-    }
+  const handlePaymentOption = async (method) => {
+    try {
+      const token = await SecureStore.getItemAsync("access_token");
 
-    if (method === "cash") {
-      Alert.alert(
-        "Pay at workshop cashier",
-        "Cash payment will be created and you can pay directly at the workshop cashier.",
+      if (!token) {
+        Alert.alert("Error", "You are not logged in.");
+        return;
+      }
+
+      setPaymentLoading(true);
+
+      const response = await axios.post(
+        `${baseUrl}/api/bookings/${bookingId}/payment`,
+        {
+          payment_method: method,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        },
       );
 
-      // API payment cash kita sambungkan setelah
-      // halaman Booking Detail selesai ditest.
+      // =========================
+      // PAY ONLINE - MIDTRANS
+      // =========================
+      if (method === "midtrans") {
+        const redirectUrl = response.data?.redirect_url;
+
+        if (!redirectUrl) {
+          throw new Error("Payment URL not found");
+        }
+
+        navigation.navigate("PaymentWebView", {
+          redirectUrl,
+        });
+
+        return;
+      }
+
+      // =========================
+      // PAY AT WORKSHOP CASHIER
+      // =========================
+      if (method === "cash") {
+        setPayment(response.data?.payment || null);
+
+        Alert.alert(
+          "Cash Payment",
+          "Payment has been created. Please pay at the workshop cashier.",
+        );
+      }
+    } catch (error) {
+      console.log(
+        "CREATE PAYMENT ERROR:",
+        error.response?.data || error.message,
+      );
+
+      Alert.alert(
+        "Payment Failed",
+        error.response?.data?.message || "Failed to create payment.",
+      );
+    } finally {
+      setPaymentLoading(false);
     }
   };
+
+  // =========================
+  // DOWNLOAD REPORT
+  // =========================
 
   const handleDownloadReport = async () => {
     try {
@@ -256,6 +342,10 @@ export default function BookingDetail() {
     }
   };
 
+  // =========================
+  // LOADING
+  // =========================
+
   if (loading) {
     return (
       <SafeAreaView style={styles.safeArea} edges={["top", "bottom"]}>
@@ -265,6 +355,10 @@ export default function BookingDetail() {
       </SafeAreaView>
     );
   }
+
+  // =========================
+  // BOOKING NOT FOUND
+  // =========================
 
   if (!booking) {
     return (
@@ -283,16 +377,24 @@ export default function BookingDetail() {
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.contentContainer}
-        refreshControl={undefined}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
-        {/* HEADER */}
+        {/* =========================
+            HEADER
+        ========================= */}
+
         <View style={styles.header}>
           <Text style={styles.title}>Booking Detail</Text>
 
           <Text style={styles.bookingCode}>{booking.booking_code || "-"}</Text>
         </View>
 
-        {/* BOOKING STATUS */}
+        {/* =========================
+            BOOKING STATUS
+        ========================= */}
+
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Booking Status</Text>
 
@@ -305,44 +407,64 @@ export default function BookingDetail() {
           </View>
         </View>
 
-        {/* PAYMENT */}
+        {/* =========================
+            PAYMENT
+        ========================= */}
+
         {booking.status === "done" && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Payment</Text>
 
-            {!payment ? (
+            {/* BELUM ADA PAYMENT */}
+            {(!payment || payment.status === "failed") && (
               <>
                 <Text style={styles.paymentDescription}>
                   Choose your preferred payment method.
                 </Text>
 
+                {/* PAY ONLINE */}
+
                 <TouchableOpacity
                   style={styles.paymentOption}
                   activeOpacity={0.8}
                   onPress={() => handlePaymentOption("midtrans")}
+                  disabled={paymentLoading}
                 >
-                  <Text style={styles.paymentOptionTitle}>Pay Online</Text>
+                  {paymentLoading ? (
+                    <ActivityIndicator />
+                  ) : (
+                    <>
+                      <Text style={styles.paymentOptionTitle}>Pay Online</Text>
 
-                  <Text style={styles.paymentOptionDescription}>
-                    Pay securely with Midtrans
-                  </Text>
+                      <Text style={styles.paymentOptionDescription}>
+                        Continue to payment
+                      </Text>
+                    </>
+                  )}
                 </TouchableOpacity>
+
+                {/* CASHIER */}
 
                 <TouchableOpacity
                   style={styles.paymentOption}
                   activeOpacity={0.8}
                   onPress={() => handlePaymentOption("cash")}
+                  disabled={paymentLoading}
                 >
                   <Text style={styles.paymentOptionTitle}>
                     Pay at workshop cashier
                   </Text>
 
                   <Text style={styles.paymentOptionDescription}>
-                    Pay directly at the workshop cashier
+                    Pay directly at the workshop
                   </Text>
                 </TouchableOpacity>
               </>
-            ) : (
+            )}
+
+            {/* PAYMENT SUDAH ADA */}
+
+            {payment && payment.status !== "failed" && (
               <>
                 <View
                   style={[
@@ -387,12 +509,22 @@ export default function BookingDetail() {
                       Please pay at the workshop cashier.
                     </Text>
                   )}
+
+                {payment.status === "pending" &&
+                  payment.payment_method === "midtrans" && (
+                    <Text style={styles.paymentNote}>
+                      Please complete your online payment.
+                    </Text>
+                  )}
               </>
             )}
           </View>
         )}
 
-        {/* APPOINTMENT */}
+        {/* =========================
+            APPOINTMENT
+        ========================= */}
+
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Appointment</Text>
 
@@ -413,7 +545,10 @@ export default function BookingDetail() {
           </View>
         </View>
 
-        {/* VEHICLE */}
+        {/* =========================
+            VEHICLE
+        ========================= */}
+
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Vehicle</Text>
 
@@ -424,7 +559,10 @@ export default function BookingDetail() {
           </View>
         </View>
 
-        {/* WORKSHOP */}
+        {/* =========================
+            WORKSHOP
+        ========================= */}
+
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Workshop</Text>
 
@@ -435,7 +573,10 @@ export default function BookingDetail() {
           </View>
         </View>
 
-        {/* NOTES */}
+        {/* =========================
+            NOTES
+        ========================= */}
+
         {booking.notes && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Notes</Text>
@@ -444,7 +585,10 @@ export default function BookingDetail() {
           </View>
         )}
 
-        {/* SERVICES */}
+        {/* =========================
+            SERVICES
+        ========================= */}
+
         {booking.services?.length > 0 && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Services</Text>
@@ -472,7 +616,10 @@ export default function BookingDetail() {
           </View>
         )}
 
-        {/* PENDING TASKS */}
+        {/* =========================
+            PENDING TASKS
+        ========================= */}
+
         {booking.pending_tasks?.length > 0 && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Pending Tasks</Text>
@@ -487,7 +634,10 @@ export default function BookingDetail() {
           </View>
         )}
 
-        {/* SERVICE REPORT */}
+        {/* =========================
+            SERVICE REPORT
+        ========================= */}
+
         {booking.status === "done" && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Service Report</Text>

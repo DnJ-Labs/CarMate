@@ -4,6 +4,7 @@ import { NearestWorkshop } from '../src/views/nearestWorkshop';
 import MainNavigator from './mainNavigators';
 import BookingDetail from '../src/views/bookingDetai';
 import { DetailVehicle } from '../src/views/detailVehicle';
+import PaymentWebView from '../src/views/paymentWebView';
 
 
 const Stack = createNativeStackNavigator();
@@ -30,6 +31,11 @@ export default function RootNavigator() {
                 name="BookingDetail"
                 component={BookingDetail}
             />
+            <Stack.Screen 
+                name="PaymentWebView"
+                component={PaymentWebView}
+            />
+
         </Stack.Navigator>
     );
 }
