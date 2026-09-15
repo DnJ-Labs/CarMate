@@ -16,7 +16,7 @@ import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 import baseUrl from "../../constant/baseUrl";
-import styles from "../styles/allWorkshopStyles";
+import styles from "../styles/allWorkshopsStyles";
 
 const LIMIT = 10;
 const TAB_BAR_HEIGHT = 40;
@@ -164,8 +164,9 @@ export function Workshop() {
         activeOpacity={0.8}
         disabled={!item.is_active}
         onPress={() =>
-          navigation.navigate("Booking", {
+          navigation.navigate("SelectVehicle", {
             workshopId: String(item._id),
+            workshop: item,
           })
         }
       >

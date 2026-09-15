@@ -209,38 +209,60 @@ export function NearestWorkshop() {
     const renderWorkshopItem = ({ item }) => {
         const dist = formatDistance(item.dist?.calculated);
         return (
-            <TouchableOpacity
-                style={styles.card}
-                activeOpacity={0.7}
-                onPress={() => focusOnWorkshop(item)}
-            >
-                <View style={styles.cardIconWrapper}>
-                    <Ionicons name="construct-outline" size={24} color="#111" />
-                </View>
-                <View style={styles.cardInfo}>
-                    <View style={styles.cardNameRow}>
-                        <Text style={styles.cardName} numberOfLines={1}>
-                            {item.name}
-                        </Text>
-                        {!item.is_active && (
-                            <View style={styles.inactiveBadge}>
-                                <Text style={styles.inactiveBadgeText}>Tutup</Text>
-                            </View>
+            <View style={styles.card}>
+                <TouchableOpacity
+                    style={styles.workshopRow}
+                    activeOpacity={0.7}
+                    onPress={() => focusOnWorkshop(item)}
+                >
+                    <View style={styles.cardIconWrapper}>
+                        <Ionicons name="construct-outline" size={24} color="#111" />
+                    </View>
+                    <View style={styles.cardInfo}>
+                        <View style={styles.cardNameRow}>
+                            <Text style={styles.cardName} numberOfLines={1}>
+                                {item.name}
+                            </Text>
+                            {!item.is_active && (
+                                <View style={styles.inactiveBadge}>
+                                    <Text style={styles.inactiveBadgeText}>Tutup</Text>
+                                </View>
+                            )}
+                        </View>
+                        {item.address && (
+                            <Text style={styles.cardAddress} numberOfLines={1}>
+                                {item.address}
+                            </Text>
                         )}
                     </View>
-                    {item.address && (
-                        <Text style={styles.cardAddress} numberOfLines={1}>
-                            {item.address}
-                        </Text>
+                    {dist && (
+                        <View style={styles.distanceBadge}>
+                            <Ionicons name="navigate" size={12} color="#5b5be0" />
+                            <Text style={styles.distanceBadgeText}>{dist}</Text>
+                        </View>
                     )}
-                </View>
-                {dist && (
-                    <View style={styles.distanceBadge}>
-                        <Ionicons name="navigate" size={12} color="#5b5be0" />
-                        <Text style={styles.distanceBadgeText}>{dist}</Text>
-                    </View>
-                )}
-            </TouchableOpacity>
+                </TouchableOpacity>
+
+                {/* Booking Button */}
+                <TouchableOpacity
+                    style={[
+                        styles.bookingButton,
+                        !item.is_active && styles.bookingButtonDisabled,
+                    ]}
+                    activeOpacity={0.8}
+                    disabled={!item.is_active}
+                    onPress={() =>
+                        navigation.navigate('SelectVehicle', {
+                            workshopId: String(item._id),
+                            workshop: item,
+                        })
+                    }
+                >
+                    <Text style={styles.bookingButtonText}>
+                        {item.is_active ? 'Booking' : 'Workshop Tutup'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
         );
     };
 
@@ -509,12 +531,15 @@ const styles = StyleSheet.create({
         gap: 12,
     },
     card: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 14,
         borderRadius: 14,
         borderWidth: 1,
         borderColor: '#e5e5e5',
+        padding: 14,
+        gap: 12,
+    },
+    workshopRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
         gap: 12,
     },
     cardIconWrapper: {
@@ -568,6 +593,20 @@ const styles = StyleSheet.create({
         fontSize: 11,
         fontWeight: '600',
         color: '#5b5be0',
+    },
+    bookingButton: {
+        backgroundColor: '#111',
+        paddingVertical: 10,
+        borderRadius: 10,
+        alignItems: 'center',
+    },
+    bookingButtonDisabled: {
+        backgroundColor: '#e5e5e5',
+    },
+    bookingButtonText: {
+        color: '#fff',
+        fontSize: 13,
+        fontWeight: '600',
     },
     centerContent: {
         flex: 1,
