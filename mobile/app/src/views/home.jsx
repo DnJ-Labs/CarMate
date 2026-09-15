@@ -9,7 +9,6 @@ import {
   Image,
   Animated,
   StyleSheet,
-  Linking,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -88,13 +87,12 @@ export function Home() {
 
   const listBottomPadding = TAB_BAR_HEIGHT + insets.bottom;
 
-  // GIMMICK 1: Greeting Dinamis Berdasarkan Waktu
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 11) return "Selamat Pagi ☀️";
-    if (hour < 15) return "Selamat Siang ☀️";
-    if (hour < 18) return "Selamat Sore 🌤️";
-    return "Selamat Malam 🌙";
+    if (hour < 11) return "Good Morning ☀️";
+    if (hour < 15) return "Good Afternoon ☀️";
+    if (hour < 18) return "Good Evening 🌤️";
+    return "Good Night 🌙";
   };
 
   const fetchVehicles = useCallback(
@@ -108,14 +106,25 @@ export function Home() {
           return;
         }
 
+        // Lowercase query & hapus spasi berlebih
+        const cleanedSearch = searchTerm.trim().toLowerCase();
+
         const { data } = await axios.get(`${baseUrl}/api/vehicles`, {
-          params: searchTerm ? { model: searchTerm } : {},
+          params: cleanedSearch ? { model: cleanedSearch } : {},
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        setVehicles(data);
+        // PERBAIKAN: Jika Backend tidak melakukan case-insensitive filter, kita filter ulang secara lokal sebagai fallback
+        if (cleanedSearch && Array.isArray(data)) {
+          const filtered = data.filter((v) =>
+            v.model?.toLowerCase().includes(cleanedSearch)
+          );
+          setVehicles(filtered);
+        } else {
+          setVehicles(data);
+        }
       } catch (err) {
         if (err.response?.status === 401) {
           await SecureStore.deleteItemAsync("access_token");
@@ -124,7 +133,7 @@ export function Home() {
         }
 
         setError(
-          err.response?.data?.message || "Gagal mengambil data kendaraan",
+          err.response?.data?.message || "Failed to fetch vehicle data",
         );
       } finally {
         setLoading(false);
@@ -134,15 +143,16 @@ export function Home() {
     [setIsLogin],
   );
 
+  // Debounce search input
   useEffect(() => {
-    setLoading(true);
     const timeout = setTimeout(() => {
       fetchVehicles(search);
-    }, 500);
+    }, 400);
 
     return () => clearTimeout(timeout);
   }, [search, fetchVehicles]);
 
+  // Refetch saat screen kembali fokus
   useFocusEffect(
     useCallback(() => {
       fetchVehicles(search);
@@ -154,10 +164,8 @@ export function Home() {
     fetchVehicles(search);
   };
 
-  // Header Komponen Tambahan (Greeting, Emergency Call, & Stats)
   const ListHeaderComponent = () => (
     <View style={gimmickStyles.headerSection}>
-      {/* Gimmick Emergency Assistance Banner */}
       <TouchableOpacity
         style={gimmickStyles.emergencyBanner}
         activeOpacity={0.85}
@@ -167,19 +175,20 @@ export function Home() {
           <Ionicons name="construct-outline" size={22} color="#FFFFFF" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={gimmickStyles.emergencyTitle}>Butuh Bengkel Darurat?</Text>
+          <Text style={gimmickStyles.emergencyTitle}>Need Emergency Workshop?</Text>
           <Text style={gimmickStyles.emergencySubtitle}>
-            Cari lokasi bengkel terdekat di sekitar Anda
+            Find the nearest workshop location around you
           </Text>
         </View>
         <Ionicons name="chevron-forward-outline" size={18} color="#0F2C59" />
       </TouchableOpacity>
 
-      {/* Counter Ringkasan */}
       <View style={gimmickStyles.summaryRow}>
-        <Text style={gimmickStyles.summaryTitle}>Garasi Saya</Text>
+        <Text style={gimmickStyles.summaryTitle}>My Garage</Text>
         <View style={gimmickStyles.countBadge}>
-          <Text style={gimmickStyles.countText}>{vehicles.length} Mobil</Text>
+          <Text style={gimmickStyles.countText}>
+            {vehicles.length} {vehicles.length === 1 ? "Car" : "Cars"}
+          </Text>
         </View>
       </View>
     </View>
@@ -214,10 +223,9 @@ export function Home() {
             </View>
           )}
 
-          {/* GIMMICK 2: Status Indicator Chip */}
           <View style={gimmickStyles.statusChip}>
             <View style={gimmickStyles.statusDot} />
-            <Text style={gimmickStyles.statusText}>Kondisi Baik</Text>
+            <Text style={gimmickStyles.statusText}>Good Condition</Text>
           </View>
         </View>
 
@@ -252,7 +260,6 @@ export function Home() {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header Utama dengan Greeting */}
       <View style={styles.header}>
         <View>
           <Text style={gimmickStyles.greetingText}>{getGreeting()}</Text>
@@ -265,26 +272,25 @@ export function Home() {
             style={styles.addVehicleButton}
             activeOpacity={0.8}
           >
-            <Ionicons name="add" size={22} color="#5b5be0" />
+            <Text style={styles.addVehicleText}>Add Vehicle</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             onPress={() => navigation.navigate("Notifications")}
             style={styles.notificationButton}
+            activeOpacity={0.8}
           >
-            <Ionicons name="notifications-outline" size={22} color="#111827" />
+            <Ionicons name="notifications-outline" size={20} color="#0F2C59" />
+            <View style={styles.notificationBadge} />
           </TouchableOpacity>
-
-
         </View>
       </View>
 
-      {/* Input Pencarian */}
       <View style={styles.searchWrapper}>
         <Ionicons name="search-outline" size={18} color="#8A94A6" />
         <TextInput
           style={styles.searchInput}
-          placeholder="Cari model kendaraan..."
+          placeholder="Search vehicle model..."
           placeholderTextColor="#8A94A6"
           value={search}
           onChangeText={setSearch}
@@ -324,7 +330,7 @@ export function Home() {
             <View style={styles.centerContent}>
               <Ionicons name="car-outline" size={48} color="#A0AEC0" />
               <Text style={styles.emptyText}>
-                {search ? "Kendaraan tidak ditemukan" : "Belum ada kendaraan terdaftar"}
+                {search ? "No vehicles found" : "No registered vehicles yet"}
               </Text>
             </View>
           }
@@ -341,7 +347,7 @@ const gimmickStyles = StyleSheet.create({
     color: "#64748B",
   },
   headerSection: {
-    marginBottom: 12,
+    marginBottom: 1,
   },
   emergencyBanner: {
     flexDirection: "row",

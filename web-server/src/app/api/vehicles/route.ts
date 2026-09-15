@@ -1,7 +1,6 @@
 import { BadRequestError } from "@/server/helpers/customError";
 import { errorHandler } from "@/server/helpers/errorHandler";
 import Vehicle, { IVehicle, vehicleSchema } from "@/server/models/Vehicle";
-
 export async function GET(request: Request) {
   try {
     const userId = request.headers.get("x-user-id");
@@ -15,7 +14,7 @@ export async function GET(request: Request) {
     let query = Vehicle.where("user_id", userId);
 
     if (model) {
-      query = query.where("model", "like", `%${model}%`);
+      query = query.where("model", "regex", `(?i)${model}`);
     }
 
     const vehicles: IVehicle[] = await query.get();

@@ -3,9 +3,10 @@ import { StyleSheet } from "react-native";
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F0F2F5", // Diganti ke Soft Light Cool Grey agar kartu putih di atasnya terlihat tegas
+    backgroundColor: "#F0F2F5", // Soft Light Cool Grey
   },
 
+  /* HEADER SECTION */
   header: {
     flexDirection: "row",
     alignItems: "center",
@@ -24,21 +25,22 @@ const styles = StyleSheet.create({
   headerActions: {
     flexDirection: "row",
     alignItems: "center",
+    gap: 10, // Menjaga jarak antartombol agar tidak berdempetan
   },
 
   addVehicleButton: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#0F2C59", // Royal Navy Blue
-    paddingVertical: 8,
+    paddingVertical: 9,
     paddingHorizontal: 14,
     borderRadius: 12,
-    gap: 4,
+    gap: 6,
     // Soft Shadow
     shadowColor: "#0F2C59",
     shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
+    shadowOpacity: 0.18,
+    shadowRadius: 5,
     elevation: 3,
   },
 
@@ -49,6 +51,37 @@ const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
 
+  notificationButton: {
+    position: "relative",
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    // Soft Shadow
+    shadowColor: "#64748B",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  notificationBadge: {
+    position: "absolute",
+    top: 9,
+    right: 9,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: "#EF4444", // Red Indicator
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
+  },
+
+  /* SEARCH BAR SECTION */
   searchWrapper: {
     flexDirection: "row",
     alignItems: "center",
@@ -58,7 +91,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 16,
-    backgroundColor: "#FFFFFF", // Diberi warna putih bersih
+    backgroundColor: "#FFFFFF",
     gap: 10,
     // Soft Shadow
     shadowColor: "#A3B1C6",
@@ -75,6 +108,7 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
+  /* LIST CONTENT CONTAINER */
   listContent: {
     paddingHorizontal: 20,
     paddingTop: 4,
@@ -82,14 +116,14 @@ const styles = StyleSheet.create({
     gap: 18,
   },
 
-  /* Card Vehicle - Neumorphic / Clean Elevated */
+  /* VEHICLE CARD */
   card: {
-    backgroundColor: "#FFFFFF", // Menggunakan Putih Bersih agar kontras dengan background
+    backgroundColor: "#FFFFFF",
     borderRadius: 20,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#E2E8F0", // Garis tepi tipis agar bentuk kartu makin tegas
-    // Soft Outer Shadow untuk pemisahan visual yang jelas
+    borderColor: "#E2E8F0",
+    // Soft Outer Shadow
     shadowColor: "#64748B",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.08,
@@ -172,6 +206,7 @@ const styles = StyleSheet.create({
   },
 
   bookButton: {
+    flexDirection: "row",
     backgroundColor: "#0F2C59", // Royal Navy Blue
     paddingVertical: 12,
     borderRadius: 12,
@@ -191,6 +226,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
 
+  /* UTILITY / EMPTY / ERROR STATES */
   centerContent: {
     flex: 1,
     alignItems: "center",
@@ -211,15 +247,6 @@ const styles = StyleSheet.create({
     color: "#8A94A6",
     textAlign: "center",
     fontWeight: "500",
-  },
-
-  notificationButton: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
   },
 });
 
