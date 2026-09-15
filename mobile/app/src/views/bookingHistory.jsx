@@ -4,9 +4,10 @@ import {
   FlatList,
   RefreshControl,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
-import { useFocusEffect } from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
 
@@ -14,6 +15,7 @@ import styles from "../styles/bookingHistoryStyles";
 import baseUrl from "../../constant/baseUrl";
 
 export default function BookingHistory() {
+  const navigation = useNavigation();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -105,7 +107,15 @@ export default function BookingHistory() {
 
   const renderBooking = ({ item }) => {
     return (
-      <View style={styles.card}>
+      <TouchableOpacity
+        style={styles.card}
+        activeOpacity={0.8}
+        onPress={() =>
+          navigation.navigate("BookingDetail", {
+            bookingId: item._id,
+          })
+        }
+      >
         <View style={styles.cardHeader}>
           <View>
             <Text style={styles.bookingLabel}>BOOKING</Text>
@@ -155,7 +165,7 @@ export default function BookingHistory() {
             </Text>
           </View>
         )}
-      </View>
+      </TouchableOpacity>
     );
   };
 

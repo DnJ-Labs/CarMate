@@ -1,8 +1,8 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
 import { AddVehicle } from '../src/views/addVehicle';
 import { NearestWorkshop } from '../src/views/nearestWorkshop';
 import MainNavigator from './mainNavigators';
+import BookingDetail from '../src/views/bookingDetai';
 import { DetailVehicle } from '../src/views/detailVehicle';
 
 
@@ -25,6 +25,10 @@ export default function RootNavigator() {
             <Stack.Screen
                 name="DetailVehicle"
                 component={DetailVehicle}
+            />
+            <Stack.Screen 
+                name="BookingDetail"
+                component={BookingDetail}
             />
         </Stack.Navigator>
     );
