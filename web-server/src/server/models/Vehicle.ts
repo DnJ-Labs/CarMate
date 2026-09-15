@@ -12,7 +12,7 @@ import * as z from "zod";
 
 export interface IVehicle extends IMongoloquentSchema, IMongoloquentTimestamps {
   user_id: string;
-  vehicles_img: string;
+  vehicles_img?: string;
   brand: string;
   model: string;
   plate_number: string;
