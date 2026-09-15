@@ -12,6 +12,7 @@ import EditProfile from '../src/views/editProfile';
 import { EditVehicle } from '../src/views/editVehicle';
 import BookingDetail from '../src/views/bookingDetail';
 import PaymentWebView from '../src/views/paymentWebView';
+import Notifications from '../src/views/notifications';
 
 
 
@@ -32,6 +33,7 @@ export default function RootNavigator() {
       <Stack.Screen name="DetailVehicle" component={DetailVehicle} />
       <Stack.Screen name="BookingDetail" component={BookingDetail} />
       <Stack.Screen name="PaymentWebView" component={PaymentWebView} />
+      <Stack.Screen name="Notifications" component={Notifications} />
       <Stack.Screen
         name="SelectWorkshop"
         component={SelectWorkshop}

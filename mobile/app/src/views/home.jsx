@@ -150,6 +150,13 @@ export function Home() {
             <Ionicons name="add" size={22} color="#5b5be0" />
           </TouchableOpacity>
 
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Notifications")}
+            style={styles.notificationButton}
+          >
+            <Ionicons name="notifications-outline" size={22} color="#111827" />
+          </TouchableOpacity>
+
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
             <Ionicons name="log-out-outline" size={22} color="#d13c3c" />
           </TouchableOpacity>

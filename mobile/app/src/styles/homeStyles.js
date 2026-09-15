@@ -139,6 +139,15 @@ const styles = StyleSheet.create({
     color: "#8b8b8b",
     textAlign: "center",
   },
+
+  notificationButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    justifyContent: "center",
+    alignItems: "center",
+  },
 });
 
 export default styles;
