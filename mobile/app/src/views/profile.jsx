@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState, useCallback } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import axios from "axios";
 import * as SecureStore from 'expo-secure-store';
 
@@ -16,6 +17,7 @@ import baseUrl from "../../constant/baseUrl";
 import { AuthContext } from '../context/AuthContext';
 
 export default function Profile() {
+  const navigation = useNavigation();
   const authContext = useContext(AuthContext);
   const { setIsLogin } = authContext;
 
@@ -55,9 +57,11 @@ export default function Profile() {
     setIsLogin(false);
   };
 
-  useEffect(() => {
-    fetchProfile();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchProfile();
+    }, [])
+  );
 
   const getInitials = (name) => {
     if (!name) return "?";
@@ -131,7 +135,10 @@ export default function Profile() {
         <Text style={styles.sectionTitle}>Account</Text>
 
         <View style={styles.menuCard}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => navigation.navigate("EditProfile", { user })}
+          >
             <View style={styles.menuIconWrapper}>
               <Ionicons name="person-outline" size={18} color="#111" />
             </View>

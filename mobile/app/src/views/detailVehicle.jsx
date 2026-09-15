@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import {
     StyleSheet,
     Text,
@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
 import axios from 'axios';
 import baseUrl from '../../constant/baseUrl';
@@ -65,9 +65,11 @@ export function DetailVehicle() {
         }
     }, [id, navigation]);
 
-    useEffect(() => {
-        fetchVehicle();
-    }, [fetchVehicle]);
+    useFocusEffect(
+        useCallback(() => {
+            fetchVehicle();
+        }, [fetchVehicle])
+    );
 
     const deleteVehicle = async () => {
         try {
@@ -249,18 +251,15 @@ export function DetailVehicle() {
                 </View>
 
                 <TouchableOpacity
-                    style={styles.bookingButton}
-                    onPress={() => { }}
+                    style={styles.bookButton}
+                    activeOpacity={0.8}
+                    onPress={() =>
+                        navigation.navigate("SelectWorkshop", {
+                            vehicleId: String(vehicle.id ?? vehicle._id),
+                        })
+                    }
                 >
-                    <Ionicons
-                        name="calendar-outline"
-                        size={20}
-                        color="#fff"
-                    />
-
-                    <Text style={styles.bookingButtonText}>
-                        Add Booking
-                    </Text>
+                    <Text style={styles.bookButtonText}>Book Appointment</Text>
                 </TouchableOpacity>
             </View>
 
@@ -399,7 +398,7 @@ const styles = StyleSheet.create({
         color: '#111',
     },
 
-    bookingButton: {
+    bookButton: {
         marginTop: 32,
         backgroundColor: '#111',
         borderRadius: 12,
@@ -410,7 +409,7 @@ const styles = StyleSheet.create({
         gap: 8,
     },
 
-    bookingButtonText: {
+    bookButtonText: {
         color: '#fff',
         fontSize: 15,
         fontWeight: '600',
