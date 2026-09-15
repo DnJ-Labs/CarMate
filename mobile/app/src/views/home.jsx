@@ -7,6 +7,7 @@ import {
   FlatList,
   ActivityIndicator,
   RefreshControl,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -28,11 +29,6 @@ export function Home() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
-
-  const handleLogout = async () => {
-    await SecureStore.deleteItemAsync("access_token");
-    setIsLogin(false);
-  };
 
   const fetchVehicles = useCallback(
     async (searchTerm = "") => {
@@ -97,43 +93,62 @@ export function Home() {
   const renderVehicleCard = ({ item }) => (
     <View style={styles.card}>
       <TouchableOpacity
-        style={styles.vehicleRow}
-        activeOpacity={0.7}
+        activeOpacity={0.85}
         onPress={() =>
           navigation.navigate("DetailVehicle", {
             id: String(item.id ?? item._id),
           })
         }
       >
-        <View style={styles.cardIconWrapper}>
-          <Ionicons name="car-sport-outline" size={28} color="#111" />
-        </View>
+        {/* Gambar Kendaraan */}
+        <View style={styles.imageWrapper}>
+          {item.vehicles_img ? (
+            <Image
+              source={{ uri: item.vehicles_img }}
+              style={styles.vehicleImage}
+              resizeMode="cover"
+            />
+          ) : (
+            <View style={styles.placeholderImage}>
+              <Ionicons name="car-outline" size={48} color="#A0AEC0" />
+            </View>
+          )}
 
-        <View style={styles.cardInfo}>
-          <Text style={styles.cardModel}>{item.model}</Text>
-
-          {item.brand && <Text style={styles.cardBrand}>{item.brand}</Text>}
-
-          {item.plate_number && (
-            <Text style={styles.cardPlate}>{item.plate_number}</Text>
+          {/* Badge Merk / Brand */}
+          {item.brand && (
+            <View style={styles.badgeContainer}>
+              <Text style={styles.badgeText}>{item.brand}</Text>
+            </View>
           )}
         </View>
 
-        <Ionicons name="chevron-forward" size={20} color="#c4c4c4" />
+        {/* Info Kendaraan */}
+        <View style={styles.cardBody}>
+          <Text style={styles.cardModel}>{item.model}</Text>
+
+          {item.plate_number && (
+            <View style={styles.plateTag}>
+              <Ionicons name="card-outline" size={14} color="#5A6A85" />
+              <Text style={styles.cardPlate}>{item.plate_number}</Text>
+            </View>
+          )}
+        </View>
       </TouchableOpacity>
 
-      {/* Book Appointment */}
-      <TouchableOpacity
-        style={styles.bookButton}
-        activeOpacity={0.8}
-        onPress={() =>
-          navigation.navigate("SelectWorkshop", {
-            vehicleId: String(item.id ?? item._id),
-          })
-        }
-      >
-        <Text style={styles.bookButtonText}>Book Appointment</Text>
-      </TouchableOpacity>
+      {/* Button Action */}
+      <View style={styles.cardFooter}>
+        <TouchableOpacity
+          style={styles.bookButton}
+          activeOpacity={0.8}
+          onPress={() =>
+            navigation.navigate("SelectWorkshop", {
+              vehicleId: String(item.id ?? item._id),
+            })
+          }
+        >
+          <Text style={styles.bookButtonText}>Book Appointment</Text>
+        </TouchableOpacity>
+      </View>
     </View>
   );
 
@@ -145,7 +160,8 @@ export function Home() {
         <View style={styles.headerActions}>
           <TouchableOpacity
             onPress={() => navigation.navigate("AddVehicle")}
-            style={styles.addButton}
+            style={styles.addVehicleButton}
+            activeOpacity={0.8}
           >
             <Ionicons name="add" size={22} color="#5b5be0" />
           </TouchableOpacity>
@@ -159,17 +175,19 @@ export function Home() {
 
           <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
             <Ionicons name="log-out-outline" size={22} color="#d13c3c" />
+            <Ionicons name="add-outline" size={16} color="#FFFFFF" />
+            <Text style={styles.addVehicleText}>Add Vehicle</Text>
           </TouchableOpacity>
         </View>
       </View>
 
       <View style={styles.searchWrapper}>
-        <Ionicons name="search-outline" size={18} color="#8b8b8b" />
+        <Ionicons name="search-outline" size={18} color="#8A94A6" />
 
         <TextInput
           style={styles.searchInput}
           placeholder="Cari model kendaraan..."
-          placeholderTextColor="#8b8b8b"
+          placeholderTextColor="#8A94A6"
           value={search}
           onChangeText={setSearch}
           autoCapitalize="none"
@@ -178,25 +196,23 @@ export function Home() {
 
         {search.length > 0 && (
           <TouchableOpacity onPress={() => setSearch("")}>
-            <Ionicons name="close-circle" size={18} color="#c4c4c4" />
+            <Ionicons name="close-circle-outline" size={18} color="#8A94A6" />
           </TouchableOpacity>
         )}
       </View>
 
       {loading && !refreshing ? (
         <View style={styles.centerContent}>
-          <ActivityIndicator size="large" color="#111" />
+          <ActivityIndicator size="large" color="#0F2C59" />
         </View>
       ) : error ? (
         <View style={styles.centerContent}>
-          <Ionicons name="alert-circle-outline" size={40} color="#d13c3c" />
-
+          <Ionicons name="alert-circle-outline" size={44} color="#E53E3E" />
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : vehicles.length === 0 ? (
         <View style={styles.centerContent}>
-          <Ionicons name="car-outline" size={40} color="#c4c4c4" />
-
+          <Ionicons name="car-outline" size={48} color="#A0AEC0" />
           <Text style={styles.emptyText}>
             {search ? "Kendaraan tidak ditemukan" : "Belum ada kendaraan"}
           </Text>

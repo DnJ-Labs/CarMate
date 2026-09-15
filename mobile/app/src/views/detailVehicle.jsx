@@ -7,6 +7,8 @@ import {
     ActivityIndicator,
     Modal,
     Alert,
+    Image,
+    ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -92,7 +94,6 @@ export function DetailVehicle() {
             );
 
             setDeleteModalVisible(false);
-
             navigation.goBack();
         } catch (err) {
             if (err.response?.status === 401) {
@@ -127,7 +128,7 @@ export function DetailVehicle() {
                 <View style={styles.centerContent}>
                     <ActivityIndicator
                         size="large"
-                        color="#111"
+                        color="#0F2C59"
                     />
                 </View>
             </SafeAreaView>
@@ -140,11 +141,12 @@ export function DetailVehicle() {
                 <View style={styles.header}>
                     <TouchableOpacity
                         onPress={() => navigation.goBack()}
+                        style={styles.backButton}
                     >
                         <Ionicons
-                            name="arrow-back"
-                            size={24}
-                            color="#111"
+                            name="arrow-back-outline"
+                            size={20}
+                            color="#0F2C59"
                         />
                     </TouchableOpacity>
 
@@ -158,8 +160,8 @@ export function DetailVehicle() {
                 <View style={styles.centerContent}>
                     <Ionicons
                         name="alert-circle-outline"
-                        size={42}
-                        color="#d13c3c"
+                        size={48}
+                        color="#E53E3E"
                     />
 
                     <Text style={styles.errorText}>
@@ -172,14 +174,17 @@ export function DetailVehicle() {
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity
                     onPress={() => navigation.goBack()}
+                    style={styles.backButton}
+                    activeOpacity={0.7}
                 >
                     <Ionicons
-                        name="arrow-back"
-                        size={24}
-                        color="#111"
+                        name="arrow-back-outline"
+                        size={20}
+                        color="#0F2C59"
                     />
                 </TouchableOpacity>
 
@@ -190,66 +195,91 @@ export function DetailVehicle() {
                 <View style={styles.headerActions}>
                     <TouchableOpacity
                         onPress={handleEdit}
-                        style={styles.headerButton}
+                        style={styles.actionButton}
+                        activeOpacity={0.7}
                     >
                         <Ionicons
                             name="create-outline"
-                            size={23}
-                            color="#111"
+                            size={20}
+                            color="#0F2C59"
                         />
                     </TouchableOpacity>
 
                     <TouchableOpacity
-                        onPress={() =>
-                            setDeleteModalVisible(true)
-                        }
-                        style={styles.headerButton}
+                        onPress={() => setDeleteModalVisible(true)}
+                        style={styles.actionButton}
                         disabled={deleting}
+                        activeOpacity={0.7}
                     >
                         <Ionicons
                             name="trash-outline"
-                            size={23}
-                            color="#d13c3c"
+                            size={20}
+                            color="#E53E3E"
                         />
                     </TouchableOpacity>
                 </View>
             </View>
 
-            <View style={styles.content}>
-                <View style={styles.vehicleIcon}>
-                    <Ionicons
-                        name="car-sport-outline"
-                        size={60}
-                        color="#111"
-                    />
+            <ScrollView contentContainerStyle={styles.content}>
+                {/* Visual Image / Placeholder Container */}
+                <View style={styles.imageCard}>
+                    {vehicle?.vehicles_img ? (
+                        <Image
+                            source={{ uri: vehicle.vehicles_img }}
+                            style={styles.vehicleImage}
+                            resizeMode="cover"
+                        />
+                    ) : (
+                        <View style={styles.placeholderImage}>
+                            <Ionicons
+                                name="car-outline"
+                                size={64}
+                                color="#A0AEC0"
+                            />
+                        </View>
+                    )}
                 </View>
 
-                <View style={styles.detailContainer}>
-                    <Text style={styles.label}>
-                        Brand
-                    </Text>
+                {/* Detail Information Card */}
+                <View style={styles.infoCard}>
+                    <Text style={styles.cardHeaderTitle}>Spesifikasi Kendaraan</Text>
 
-                    <Text style={styles.value}>
-                        {vehicle?.brand || '-'}
-                    </Text>
+                    <View style={styles.infoRow}>
+                        <View style={styles.infoIconWrapper}>
+                            <Ionicons name="pricetag-outline" size={18} color="#0F2C59" />
+                        </View>
+                        <View style={styles.infoTextWrapper}>
+                            <Text style={styles.label}>Brand</Text>
+                            <Text style={styles.value}>{vehicle?.brand || '-'}</Text>
+                        </View>
+                    </View>
 
-                    <Text style={styles.label}>
-                        Model
-                    </Text>
+                    <View style={styles.divider} />
 
-                    <Text style={styles.value}>
-                        {vehicle?.model || '-'}
-                    </Text>
+                    <View style={styles.infoRow}>
+                        <View style={styles.infoIconWrapper}>
+                            <Ionicons name="car-sport-outline" size={18} color="#0F2C59" />
+                        </View>
+                        <View style={styles.infoTextWrapper}>
+                            <Text style={styles.label}>Model</Text>
+                            <Text style={styles.value}>{vehicle?.model || '-'}</Text>
+                        </View>
+                    </View>
 
-                    <Text style={styles.label}>
-                        Plate Number
-                    </Text>
+                    <View style={styles.divider} />
 
-                    <Text style={styles.value}>
-                        {vehicle?.plate_number || '-'}
-                    </Text>
+                    <View style={styles.infoRow}>
+                        <View style={styles.infoIconWrapper}>
+                            <Ionicons name="card-outline" size={18} color="#0F2C59" />
+                        </View>
+                        <View style={styles.infoTextWrapper}>
+                            <Text style={styles.label}>Plate Number</Text>
+                            <Text style={styles.value}>{vehicle?.plate_number || '-'}</Text>
+                        </View>
+                    </View>
                 </View>
 
+                {/* Book Action Button */}
                 <TouchableOpacity
                     style={styles.bookButton}
                     activeOpacity={0.8}
@@ -260,9 +290,11 @@ export function DetailVehicle() {
                     }
                 >
                     <Text style={styles.bookButtonText}>Book Appointment</Text>
+                    <Ionicons name="chevron-forward-outline" size={18} color="#FFFFFF" />
                 </TouchableOpacity>
-            </View>
+            </ScrollView>
 
+            {/* Delete Modal */}
             <Modal
                 visible={deleteModalVisible}
                 transparent
@@ -279,7 +311,7 @@ export function DetailVehicle() {
                             <Ionicons
                                 name="trash-outline"
                                 size={28}
-                                color="#d13c3c"
+                                color="#E53E3E"
                             />
                         </View>
 
@@ -288,17 +320,15 @@ export function DetailVehicle() {
                         </Text>
 
                         <Text style={styles.modalMessage}>
-                            Are you sure you want to delete this
-                            vehicle? This action cannot be undone.
+                            Are you sure you want to delete this vehicle? This action cannot be undone.
                         </Text>
 
                         <View style={styles.modalActions}>
                             <TouchableOpacity
                                 style={styles.cancelButton}
-                                onPress={() =>
-                                    setDeleteModalVisible(false)
-                                }
+                                onPress={() => setDeleteModalVisible(false)}
                                 disabled={deleting}
+                                activeOpacity={0.7}
                             >
                                 <Text style={styles.cancelButtonText}>
                                     Cancel
@@ -309,16 +339,15 @@ export function DetailVehicle() {
                                 style={styles.deleteButton}
                                 onPress={deleteVehicle}
                                 disabled={deleting}
+                                activeOpacity={0.8}
                             >
                                 {deleting ? (
                                     <ActivityIndicator
                                         size="small"
-                                        color="#fff"
+                                        color="#FFFFFF"
                                     />
                                 ) : (
-                                    <Text
-                                        style={styles.deleteButtonText}
-                                    >
+                                    <Text style={styles.deleteButtonText}>
                                         Delete
                                     </Text>
                                 )}
@@ -334,85 +363,179 @@ export function DetailVehicle() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#F0F2F5', // Soft Light Cool Grey
     },
 
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 24,
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e5e5',
+        paddingHorizontal: 20,
+        paddingVertical: 14,
+    },
+
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#A3B1C6',
+        shadowOffset: { width: 2, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 3,
     },
 
     headerTitle: {
         fontSize: 18,
         fontWeight: '700',
-        color: '#111',
+        color: '#0F2C59', // Royal Navy Blue
     },
 
     headerActions: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 16,
+        gap: 10,
     },
 
-    headerButton: {
-        padding: 2,
+    actionButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#A3B1C6',
+        shadowOffset: { width: 2, height: 2 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 3,
     },
 
     headerPlaceholder: {
-        width: 24,
+        width: 40,
     },
 
     content: {
-        padding: 24,
+        paddingHorizontal: 20,
+        paddingTop: 10,
+        paddingBottom: 28,
+        gap: 20,
     },
 
-    vehicleIcon: {
-        width: 120,
-        height: 120,
+    /* Image Box */
+    imageCard: {
+        width: '100%',
+        height: 200,
         borderRadius: 20,
-        backgroundColor: '#f2f2f2',
+        backgroundColor: '#FFFFFF',
+        overflow: 'hidden',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        elevation: 4,
+    },
+
+    vehicleImage: {
+        width: '100%',
+        height: '100%',
+    },
+
+    placeholderImage: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#EDF2F7',
+    },
+
+    /* Card Details */
+    infoCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 20,
+        padding: 20,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        elevation: 4,
+    },
+
+    cardHeaderTitle: {
+        fontSize: 15,
+        fontWeight: '700',
+        color: '#0F2C59',
+        marginBottom: 16,
+    },
+
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 14,
+        paddingVertical: 4,
+    },
+
+    infoIconWrapper: {
+        width: 36,
+        height: 36,
+        borderRadius: 12,
+        backgroundColor: '#F0F4F8',
         alignItems: 'center',
         justifyContent: 'center',
-        alignSelf: 'center',
-        marginBottom: 32,
     },
 
-    detailContainer: {
-        gap: 4,
+    infoTextWrapper: {
+        flex: 1,
     },
 
     label: {
         fontSize: 12,
-        color: '#8b8b8b',
-        marginTop: 16,
+        fontWeight: '500',
+        color: '#64748B',
     },
 
     value: {
-        fontSize: 16,
+        fontSize: 15,
         fontWeight: '600',
-        color: '#111',
+        color: '#1A202C',
+        marginTop: 2,
     },
 
+    divider: {
+        height: 1,
+        backgroundColor: '#F1F5F9',
+        marginVertical: 10,
+    },
+
+    /* Book Button */
     bookButton: {
-        marginTop: 32,
-        backgroundColor: '#111',
-        borderRadius: 12,
+        backgroundColor: '#0F2C59',
         paddingVertical: 14,
+        paddingHorizontal: 20,
+        borderRadius: 14,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
+        gap: 6,
+        shadowColor: '#0F2C59',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 4,
     },
 
     bookButtonText: {
-        color: '#fff',
-        fontSize: 15,
+        color: '#FFFFFF',
+        fontSize: 14,
         fontWeight: '600',
+        letterSpacing: 0.3,
     },
 
     centerContent: {
@@ -420,18 +543,20 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 24,
-        gap: 8,
+        gap: 12,
     },
 
     errorText: {
         fontSize: 14,
-        color: '#d13c3c',
+        color: '#E53E3E',
         textAlign: 'center',
+        fontWeight: '500',
     },
 
+    /* Modal Styling */
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.45)',
+        backgroundColor: 'rgba(15, 23, 42, 0.4)',
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 24,
@@ -439,33 +564,38 @@ const styles = StyleSheet.create({
 
     modalContainer: {
         width: '100%',
-        backgroundColor: '#fff',
-        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 24,
         padding: 24,
         alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.15,
+        shadowRadius: 20,
+        elevation: 10,
     },
 
     deleteIcon: {
-        width: 58,
-        height: 58,
-        borderRadius: 29,
-        backgroundColor: '#fff0f0',
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: '#FFF5F5',
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 16,
     },
 
     modalTitle: {
-        fontSize: 20,
+        fontSize: 18,
         fontWeight: '700',
-        color: '#111',
+        color: '#1A202C',
         marginBottom: 8,
     },
 
     modalMessage: {
-        fontSize: 14,
-        lineHeight: 21,
-        color: '#777',
+        fontSize: 13,
+        lineHeight: 20,
+        color: '#64748B',
         textAlign: 'center',
         marginBottom: 24,
     },
@@ -473,14 +603,14 @@ const styles = StyleSheet.create({
     modalActions: {
         flexDirection: 'row',
         width: '100%',
-        gap: 10,
+        gap: 12,
     },
 
     cancelButton: {
         flex: 1,
-        paddingVertical: 13,
+        paddingVertical: 12,
         borderRadius: 12,
-        backgroundColor: '#f2f2f2',
+        backgroundColor: '#EDF2F7',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -488,14 +618,14 @@ const styles = StyleSheet.create({
     cancelButtonText: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#111',
+        color: '#4A5568',
     },
 
     deleteButton: {
         flex: 1,
-        paddingVertical: 13,
+        paddingVertical: 12,
         borderRadius: 12,
-        backgroundColor: '#d13c3c',
+        backgroundColor: '#E53E3E',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -503,6 +633,6 @@ const styles = StyleSheet.create({
     deleteButtonText: {
         fontSize: 14,
         fontWeight: '600',
-        color: '#fff',
+        color: '#FFFFFF',
     },
 });
