@@ -308,7 +308,7 @@ export function SelectWorkshop() {
                     disabled={mode === 'all' && !item.is_active}
                 >
                     <View style={styles.cardIconWrapper}>
-                        <Ionicons name="construct-outline" size={24} color="#111" />
+                        <Ionicons name="construct-outline" size={22} color="#0F2C59" />
                     </View>
 
                     <View style={styles.cardInfo}>
@@ -334,11 +334,11 @@ export function SelectWorkshop() {
 
                     {dist ? (
                         <View style={styles.distanceBadge}>
-                            <Ionicons name="navigate" size={12} color="#5b5be0" />
+                            <Ionicons name="navigate-outline" size={12} color="#0F2C59" />
                             <Text style={styles.distanceBadgeText}>{dist}</Text>
                         </View>
                     ) : (
-                        <Ionicons name="chevron-forward" size={20} color="#c4c4c4" />
+                        <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
                     )}
                 </TouchableOpacity>
 
@@ -365,11 +365,12 @@ export function SelectWorkshop() {
                     style={[styles.pageButton, (page <= 1 || loading) && styles.pageButtonDisabled]}
                     onPress={goToPrevPage}
                     disabled={page <= 1 || loading}
+                    activeOpacity={0.7}
                 >
                     <Ionicons
-                        name="chevron-back"
+                        name="chevron-back-outline"
                         size={16}
-                        color={page <= 1 || loading ? '#c4c4c4' : '#111'}
+                        color={page <= 1 || loading ? '#A0AEC0' : '#0F2C59'}
                     />
                     <Text
                         style={[
@@ -392,6 +393,7 @@ export function SelectWorkshop() {
                     ]}
                     onPress={goToNextPage}
                     disabled={page >= lastPage || loading}
+                    activeOpacity={0.7}
                 >
                     <Text
                         style={[
@@ -402,9 +404,9 @@ export function SelectWorkshop() {
                         Next
                     </Text>
                     <Ionicons
-                        name="chevron-forward"
+                        name="chevron-forward-outline"
                         size={16}
-                        color={page >= lastPage || loading ? '#c4c4c4' : '#111'}
+                        color={page >= lastPage || loading ? '#A0AEC0' : '#0F2C59'}
                     />
                 </TouchableOpacity>
             </View>
@@ -424,7 +426,7 @@ export function SelectWorkshop() {
         if (loading && !refreshing) {
             return (
                 <View style={styles.centerContent}>
-                    <ActivityIndicator size="large" color="#111" />
+                    <ActivityIndicator size="large" color="#0F2C59" />
                 </View>
             );
         }
@@ -432,7 +434,7 @@ export function SelectWorkshop() {
         if (mode === 'nearest' && locationNotSet) {
             return (
                 <View style={styles.centerContent}>
-                    <Ionicons name="location-outline" size={40} color="#c4c4c4" />
+                    <Ionicons name="location-outline" size={44} color="#A0AEC0" />
                     <Text style={styles.emptyText}>
                         Lokasi Anda belum diatur. Perbarui lokasi untuk melihat workshop terdekat.
                     </Text>
@@ -440,9 +442,10 @@ export function SelectWorkshop() {
                         style={styles.primaryButton}
                         onPress={handleUpdateLocation}
                         disabled={updatingLocation}
+                        activeOpacity={0.8}
                     >
                         {updatingLocation ? (
-                            <ActivityIndicator size="small" color="#fff" />
+                            <ActivityIndicator size="small" color="#FFFFFF" />
                         ) : (
                             <Text style={styles.primaryButtonText}>Atur Lokasi Saya</Text>
                         )}
@@ -454,7 +457,7 @@ export function SelectWorkshop() {
         if (error) {
             return (
                 <View style={styles.centerContent}>
-                    <Ionicons name="alert-circle-outline" size={40} color="#d13c3c" />
+                    <Ionicons name="alert-circle-outline" size={44} color="#E53E3E" />
                     <Text style={styles.errorText}>{error}</Text>
                 </View>
             );
@@ -463,7 +466,7 @@ export function SelectWorkshop() {
         if (workshops.length === 0) {
             return (
                 <View style={styles.centerContent}>
-                    <Ionicons name="construct-outline" size={40} color="#c4c4c4" />
+                    <Ionicons name="construct-outline" size={48} color="#A0AEC0" />
                     <Text style={styles.emptyText}>
                         {mode === 'nearest'
                             ? `Tidak ada workshop dalam radius ${DISTANCE_OPTIONS.find((o) => o.value === distance)?.label}`
@@ -483,6 +486,7 @@ export function SelectWorkshop() {
                         styles.listContent,
                         { paddingBottom: 16 + insets.bottom },
                     ]}
+                    showsVerticalScrollIndicator={false}
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                     }
@@ -495,8 +499,13 @@ export function SelectWorkshop() {
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
-                    <Ionicons name="chevron-back" size={24} color="#111" />
+                <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    hitSlop={10}
+                    style={styles.backButton}
+                    activeOpacity={0.7}
+                >
+                    <Ionicons name="chevron-back-outline" size={22} color="#0F2C59" />
                 </TouchableOpacity>
 
                 <Text style={styles.title}>Pilih Workshop</Text>
@@ -506,15 +515,16 @@ export function SelectWorkshop() {
                         style={styles.updateButton}
                         onPress={handleUpdateLocation}
                         disabled={updatingLocation}
+                        activeOpacity={0.8}
                     >
                         {updatingLocation ? (
-                            <ActivityIndicator size="small" color="#5b5be0" />
+                            <ActivityIndicator size="small" color="#0F2C59" />
                         ) : (
-                            <Ionicons name="locate-outline" size={18} color="#5b5be0" />
+                            <Ionicons name="locate-outline" size={18} color="#0F2C59" />
                         )}
                     </TouchableOpacity>
                 ) : (
-                    <View style={{ width: 32 }} />
+                    <View style={styles.headerPlaceholder} />
                 )}
             </View>
 
@@ -523,11 +533,12 @@ export function SelectWorkshop() {
                 <TouchableOpacity
                     style={[styles.modeButton, mode === 'all' && styles.modeButtonActive]}
                     onPress={() => switchMode('all')}
+                    activeOpacity={0.8}
                 >
                     <Ionicons
                         name="list-outline"
                         size={14}
-                        color={mode === 'all' ? '#fff' : '#8b8b8b'}
+                        color={mode === 'all' ? '#FFFFFF' : '#64748B'}
                     />
                     <Text style={[styles.modeText, mode === 'all' && styles.modeTextActive]}>
                         Semua
@@ -537,11 +548,12 @@ export function SelectWorkshop() {
                 <TouchableOpacity
                     style={[styles.modeButton, mode === 'nearest' && styles.modeButtonActive]}
                     onPress={() => switchMode('nearest')}
+                    activeOpacity={0.8}
                 >
                     <Ionicons
                         name="navigate-outline"
                         size={14}
-                        color={mode === 'nearest' ? '#fff' : '#8b8b8b'}
+                        color={mode === 'nearest' ? '#FFFFFF' : '#64748B'}
                     />
                     <Text style={[styles.modeText, mode === 'nearest' && styles.modeTextActive]}>
                         Terdekat
@@ -555,18 +567,20 @@ export function SelectWorkshop() {
                         <TouchableOpacity
                             style={styles.distanceSelector}
                             onPress={() => setShowDistancePicker(true)}
+                            activeOpacity={0.7}
                         >
-                            <Ionicons name="options-outline" size={14} color="#111" />
+                            <Ionicons name="options-outline" size={14} color="#0F2C59" />
                             <Text style={styles.distanceSelectorText}>
                                 Radius {DISTANCE_OPTIONS.find((o) => o.value === distance)?.label}
                             </Text>
-                            <Ionicons name="chevron-down" size={14} color="#8b8b8b" />
+                            <Ionicons name="chevron-down-outline" size={14} color="#64748B" />
                         </TouchableOpacity>
 
                         <TouchableOpacity
                             onPress={handleUpdateLocation}
                             disabled={updatingLocation}
                             style={styles.updateLocationTextButton}
+                            activeOpacity={0.7}
                         >
                             <Text style={styles.updateLocationTextButtonText}>
                                 {updatingLocation ? 'Memperbarui...' : 'Perbarui lokasi saya'}
@@ -586,13 +600,13 @@ export function SelectWorkshop() {
                                 <Circle
                                     center={userLocation}
                                     radius={distance}
-                                    strokeColor="rgba(91,91,224,0.5)"
-                                    fillColor="rgba(91,91,224,0.1)"
+                                    strokeColor="rgba(15, 44, 89, 0.4)"
+                                    fillColor="rgba(15, 44, 89, 0.08)"
                                 />
                                 <Marker
                                     coordinate={userLocation}
                                     title="Lokasi Anda"
-                                    pinColor="#5b5be0"
+                                    pinColor="#0F2C59"
                                 />
                                 {workshops.map((item) =>
                                     item.location?.coordinates ? (
@@ -611,7 +625,7 @@ export function SelectWorkshop() {
                             </MapView>
                         ) : (
                             <View style={styles.mapPlaceholder}>
-                                <ActivityIndicator size="small" color="#111" />
+                                <ActivityIndicator size="small" color="#0F2C59" />
                                 <Text style={styles.mapPlaceholderText}>Mengambil lokasi...</Text>
                             </View>
                         )}
@@ -638,6 +652,7 @@ export function SelectWorkshop() {
                                 key={opt.value}
                                 style={styles.modalOption}
                                 onPress={() => handleSelectDistance(opt.value)}
+                                activeOpacity={0.7}
                             >
                                 <Text
                                     style={[
@@ -648,7 +663,7 @@ export function SelectWorkshop() {
                                     {opt.label}
                                 </Text>
                                 {opt.value === distance && (
-                                    <Ionicons name="checkmark" size={18} color="#5b5be0" />
+                                    <Ionicons name="checkmark-outline" size={18} color="#0F2C59" />
                                 )}
                             </TouchableOpacity>
                         ))}
@@ -660,30 +675,59 @@ export function SelectWorkshop() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff' },
+    container: {
+        flex: 1,
+        backgroundColor: '#F0F2F5', // Light Cool Grey
+    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
         paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e5e5',
     },
-    title: { fontSize: 17, fontWeight: '700', color: '#111' },
-    updateButton: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#eef0ff',
+        backgroundColor: '#FFFFFF',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#0F2C59', // Royal Navy Blue
+        letterSpacing: -0.3,
+    },
+    headerPlaceholder: {
+        width: 40,
+    },
+    updateButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     modeSwitch: {
         flexDirection: 'row',
-        gap: 8,
+        gap: 10,
         paddingHorizontal: 20,
-        paddingTop: 12,
+        paddingTop: 14,
     },
     modeButton: {
         flex: 1,
@@ -691,97 +735,132 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         gap: 6,
-        paddingVertical: 9,
-        borderRadius: 10,
+        paddingVertical: 10,
+        borderRadius: 14,
+        backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: '#e5e5e5',
+        borderColor: '#E2E8F0',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
-    modeButtonActive: { backgroundColor: '#111', borderColor: '#111' },
-    modeText: { fontSize: 13, fontWeight: '600', color: '#8b8b8b' },
-    modeTextActive: { color: '#fff' },
+    modeButtonActive: {
+        backgroundColor: '#0F2C59',
+        borderColor: '#0F2C59',
+        shadowColor: '#0F2C59',
+        shadowOpacity: 0.2,
+    },
+    modeText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
+    modeTextActive: { color: '#FFFFFF' },
     distanceRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingVertical: 10,
+        paddingVertical: 12,
     },
     distanceSelector: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        paddingVertical: 6,
-        paddingHorizontal: 10,
-        borderRadius: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: '#e5e5e5',
+        borderColor: '#E2E8F0',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
-    distanceSelectorText: { fontSize: 12, fontWeight: '600', color: '#111' },
+    distanceSelectorText: { fontSize: 12, fontWeight: '600', color: '#1A202C' },
     updateLocationTextButton: { paddingVertical: 6 },
-    updateLocationTextButtonText: { fontSize: 12, fontWeight: '600', color: '#5b5be0' },
+    updateLocationTextButtonText: { fontSize: 12, fontWeight: '600', color: '#0F2C59' },
     mapWrapper: {
         width: SCREEN_WIDTH,
         height: MAP_HEIGHT,
-        backgroundColor: '#f2f2f2',
+        backgroundColor: '#E2E8F0',
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: '#E2E8F0',
     },
     map: { width: '100%', height: '100%' },
     mapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
-    mapPlaceholderText: { fontSize: 12, color: '#8b8b8b' },
-    listContent: { paddingHorizontal: 24, paddingTop: 12, gap: 12 },
+    mapPlaceholderText: { fontSize: 12, fontWeight: '500', color: '#64748B' },
+    listContent: { paddingHorizontal: 20, paddingTop: 16, gap: 16 },
     card: {
-        borderRadius: 14,
+        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: '#e5e5e5',
-        padding: 14,
-        gap: 12,
+        borderColor: '#E2E8F0',
+        padding: 16,
+        gap: 14,
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        elevation: 4,
     },
     workshopRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     cardIconWrapper: {
         width: 44,
         height: 44,
-        borderRadius: 10,
-        backgroundColor: '#f2f2f2',
+        borderRadius: 14,
+        backgroundColor: '#F0F4F8',
         alignItems: 'center',
         justifyContent: 'center',
     },
     cardInfo: { flex: 1 },
-    cardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-    cardName: { fontSize: 15, fontWeight: '600', color: '#111', flexShrink: 1 },
+    cardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+    cardName: { fontSize: 16, fontWeight: '700', color: '#1A202C', flexShrink: 1 },
     inactiveBadge: {
-        backgroundColor: '#fdecec',
-        borderRadius: 6,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
+        backgroundColor: '#FFF5F5',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#FED7D7',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
     },
-    inactiveBadgeText: { fontSize: 10, fontWeight: '600', color: '#d13c3c' },
-    cardAddress: { fontSize: 13, color: '#8b8b8b', marginTop: 2 },
-    cardHours: { fontSize: 12, color: '#5b5be0', marginTop: 2, fontWeight: '600' },
+    inactiveBadgeText: { fontSize: 10, fontWeight: '700', color: '#E53E3E' },
+    cardAddress: { fontSize: 13, fontWeight: '500', color: '#64748B', marginTop: 3 },
+    cardHours: { fontSize: 12, color: '#0F2C59', marginTop: 3, fontWeight: '600' },
     distanceBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 3,
-        backgroundColor: '#eef0ff',
-        borderRadius: 8,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-    },
-    distanceBadgeText: { fontSize: 11, fontWeight: '600', color: '#5b5be0' },
-    selectButton: {
-        backgroundColor: '#111',
-        paddingVertical: 10,
+        gap: 4,
+        backgroundColor: '#F0F4F8',
         borderRadius: 10,
-        alignItems: 'center',
+        paddingHorizontal: 10,
+        paddingVertical: 6,
     },
-    selectButtonDisabled: { backgroundColor: '#e5e5e5' },
-    selectButtonText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+    distanceBadgeText: { fontSize: 12, fontWeight: '700', color: '#0F2C59' },
+    selectButton: {
+        backgroundColor: '#0F2C59',
+        paddingVertical: 12,
+        borderRadius: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#0F2C59',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+        elevation: 3,
+    },
+    selectButtonDisabled: { backgroundColor: '#E2E8F0', shadowOpacity: 0, elevation: 0 },
+    selectButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600', letterSpacing: 0.3 },
     pagination: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 24,
+        paddingHorizontal: 20,
         paddingTop: 12,
+        backgroundColor: '#F0F2F5',
         borderTopWidth: 1,
-        borderTopColor: '#e5e5e5',
+        borderTopColor: '#E2E8F0',
     },
     pageButton: {
         flexDirection: 'row',
@@ -790,52 +869,65 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         paddingHorizontal: 12,
         borderRadius: 10,
+        backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: '#e5e5e5',
+        borderColor: '#E2E8F0',
     },
-    pageButtonDisabled: { borderColor: '#f2f2f2' },
-    pageButtonText: { fontSize: 13, fontWeight: '600', color: '#111' },
-    pageButtonTextDisabled: { color: '#c4c4c4' },
-    pageIndicator: { fontSize: 12, color: '#8b8b8b' },
+    pageButtonDisabled: { backgroundColor: '#F0F2F5', borderColor: '#EDF2F7' },
+    pageButtonText: { fontSize: 13, fontWeight: '600', color: '#0F2C59' },
+    pageButtonTextDisabled: { color: '#A0AEC0' },
+    pageIndicator: { fontSize: 12, fontWeight: '500', color: '#64748B' },
     centerContent: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 24,
-        gap: 10,
+        gap: 12,
     },
-    errorText: { fontSize: 14, color: '#d13c3c', textAlign: 'center' },
-    emptyText: { fontSize: 14, color: '#8b8b8b', textAlign: 'center' },
+    errorText: { fontSize: 14, color: '#E53E3E', textAlign: 'center', fontWeight: '500' },
+    emptyText: { fontSize: 14, color: '#64748B', textAlign: 'center', fontWeight: '500' },
     primaryButton: {
-        backgroundColor: '#111',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
+        backgroundColor: '#0F2C59',
+        paddingVertical: 12,
+        paddingHorizontal: 24,
         borderRadius: 12,
         marginTop: 4,
+        shadowColor: '#0F2C59',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+        elevation: 3,
     },
-    primaryButtonText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+    primaryButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
     modalBackdrop: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.3)',
+        backgroundColor: 'rgba(15, 23, 42, 0.4)',
         justifyContent: 'flex-end',
     },
     modalSheet: {
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingHorizontal: 20,
-        paddingTop: 16,
-        paddingBottom: 32,
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingHorizontal: 24,
+        paddingTop: 20,
+        paddingBottom: 36,
     },
-    modalTitle: { fontSize: 14, fontWeight: '700', color: '#8b8b8b', marginBottom: 8 },
+    modalTitle: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#64748B',
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+        marginBottom: 12,
+    },
     modalOption: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 14,
+        paddingVertical: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#f2f2f2',
+        borderBottomColor: '#F1F5F9',
     },
-    modalOptionText: { fontSize: 15, color: '#111' },
-    modalOptionTextActive: { color: '#5b5be0', fontWeight: '700' },
+    modalOptionText: { fontSize: 15, color: '#1A202C', fontWeight: '500' },
+    modalOptionTextActive: { color: '#0F2C59', fontWeight: '700' },
 });

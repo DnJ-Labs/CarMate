@@ -27,7 +27,13 @@ export async function GET(request: Request) {
 
     const limit: number = Math.max(Number(searchParams.get("limit")) || 10, 1);
 
-    const workshops = await Workshop.paginate(page, limit);
+    const search: string = searchParams.get("search")?.trim() || "";
+
+    const query = search
+      ? Workshop.where("name", "like", search)
+      : Workshop.query();
+
+    const workshops = await query.paginate(page, limit);
 
     return Response.json(workshops, {
       status: 200,

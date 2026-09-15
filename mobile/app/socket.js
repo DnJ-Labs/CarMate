@@ -1,6 +1,6 @@
 import { io } from "socket.io-client";
 
-const socket = io("https://pn9v04b7-3001.asse.devtunnels.ms/");
+const socket = io("https://c9k836ch-3001.asse.devtunnels.ms/");
 
 socket.on("connect", () => {
   console.log("SOCKET CONNECTED:", socket.id);

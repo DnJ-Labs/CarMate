@@ -8,6 +8,7 @@ import {
     FlatList,
     ActivityIndicator,
     RefreshControl,
+    Image,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -81,43 +82,71 @@ export function SelectVehicle() {
             activeOpacity={0.7}
             onPress={() => handleSelect(item)}
         >
-            <View style={styles.cardIconWrapper}>
-                <Ionicons name="car-sport-outline" size={28} color="#111" />
-            </View>
-
-            <View style={styles.cardInfo}>
-                <Text style={styles.cardModel}>{item.model}</Text>
-
-                {item.brand && <Text style={styles.cardBrand}>{item.brand}</Text>}
-
-                {item.plate_number && (
-                    <Text style={styles.cardPlate}>{item.plate_number}</Text>
+            <View style={styles.cardImageWrapper}>
+                {item.vehicles_img ? (
+                    <Image
+                        source={{ uri: item.vehicles_img }}
+                        style={styles.cardImage}
+                        resizeMode="cover"
+                    />
+                ) : (
+                    <View style={styles.cardImagePlaceholder}>
+                        <Ionicons name="car-sport" size={28} color="#0F2C59" />
+                    </View>
                 )}
             </View>
 
-            <Ionicons name="chevron-forward" size={20} color="#c4c4c4" />
+            <View style={styles.cardInfo}>
+                {item.brand && (
+                    <Text style={styles.cardBrand} numberOfLines={1}>
+                        {item.brand.toUpperCase()}
+                    </Text>
+                )}
+
+                <Text style={styles.cardModel} numberOfLines={1}>
+                    {item.model}
+                </Text>
+
+                {item.plate_number && (
+                    <View style={styles.plateTag}>
+                        <Ionicons name="card" size={12} color="#0F2C59" />
+                        <Text style={styles.cardPlate}>{item.plate_number}</Text>
+                    </View>
+                )}
+            </View>
+
+            <View style={styles.actionWrapper}>
+                <Ionicons name="chevron-forward" size={18} color="#0F2C59" />
+            </View>
         </TouchableOpacity>
     );
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
+            {/* Header */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
-                    <Ionicons name="chevron-back" size={24} color="#111" />
+                <TouchableOpacity
+                    onPress={() => navigation.goBack()}
+                    hitSlop={10}
+                    style={styles.backButton}
+                    activeOpacity={0.7}
+                >
+                    <Ionicons name="chevron-back-outline" size={22} color="#0F2C59" />
                 </TouchableOpacity>
 
                 <Text style={styles.title}>Pilih Kendaraan</Text>
 
-                <View style={{ width: 24 }} />
+                <View style={styles.headerPlaceholder} />
             </View>
 
+            {/* Search Input */}
             <View style={styles.searchWrapper}>
-                <Ionicons name="search-outline" size={18} color="#8b8b8b" />
+                <Ionicons name="search-outline" size={18} color="#64748B" />
 
                 <TextInput
                     style={styles.searchInput}
                     placeholder="Cari model kendaraan..."
-                    placeholderTextColor="#8b8b8b"
+                    placeholderTextColor="#A0AEC0"
                     value={search}
                     onChangeText={setSearch}
                     autoCapitalize="none"
@@ -126,23 +155,24 @@ export function SelectVehicle() {
 
                 {search.length > 0 && (
                     <TouchableOpacity onPress={() => setSearch('')}>
-                        <Ionicons name="close-circle" size={18} color="#c4c4c4" />
+                        <Ionicons name="close-circle-outline" size={18} color="#A0AEC0" />
                     </TouchableOpacity>
                 )}
             </View>
 
+            {/* Content List & State Handling */}
             {loading && !refreshing ? (
                 <View style={styles.centerContent}>
-                    <ActivityIndicator size="large" color="#111" />
+                    <ActivityIndicator size="large" color="#0F2C59" />
                 </View>
             ) : error ? (
                 <View style={styles.centerContent}>
-                    <Ionicons name="alert-circle-outline" size={40} color="#d13c3c" />
+                    <Ionicons name="alert-circle-outline" size={44} color="#E53E3E" />
                     <Text style={styles.errorText}>{error}</Text>
                 </View>
             ) : vehicles.length === 0 ? (
                 <View style={styles.centerContent}>
-                    <Ionicons name="car-outline" size={40} color="#c4c4c4" />
+                    <Ionicons name="car-outline" size={48} color="#A0AEC0" />
                     <Text style={styles.emptyText}>
                         {search ? 'Kendaraan tidak ditemukan' : 'Belum ada kendaraan'}
                     </Text>
@@ -151,6 +181,7 @@ export function SelectVehicle() {
                         <TouchableOpacity
                             style={styles.primaryButton}
                             onPress={() => navigation.navigate('AddVehicle')}
+                            activeOpacity={0.8}
                         >
                             <Text style={styles.primaryButtonText}>Tambah Kendaraan</Text>
                         </TouchableOpacity>
@@ -165,6 +196,7 @@ export function SelectVehicle() {
                         styles.listContent,
                         { paddingBottom: 16 + insets.bottom },
                     ]}
+                    showsVerticalScrollIndicator={false}
                     refreshControl={
                         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
                     }
@@ -175,68 +207,187 @@ export function SelectVehicle() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff' },
+    container: {
+        flex: 1,
+        backgroundColor: '#F0F2F5', // Light Cool Grey
+    },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
         paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e5e5',
     },
-    title: { fontSize: 17, fontWeight: '700', color: '#111' },
+    backButton: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#FFFFFF',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.08,
+        shadowRadius: 4,
+        elevation: 2,
+    },
+    title: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#0F2C59', // Royal Navy Blue
+        letterSpacing: -0.3,
+    },
+    headerPlaceholder: {
+        width: 40,
+    },
     searchWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
         marginHorizontal: 20,
-        marginTop: 14,
-        marginBottom: 4,
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        borderRadius: 12,
+        marginTop: 10,
+        marginBottom: 8,
+        paddingHorizontal: 14,
+        paddingVertical: 12,
+        borderRadius: 14,
+        backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: '#e5e5e5',
+        borderColor: '#E2E8F0',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
-    searchInput: { flex: 1, fontSize: 14, color: '#111' },
-    listContent: { paddingHorizontal: 20, paddingTop: 12, gap: 12 },
+    searchInput: {
+        flex: 1,
+        fontSize: 14,
+        color: '#1A202C',
+        fontWeight: '500',
+    },
+    listContent: {
+        paddingHorizontal: 20,
+        paddingTop: 12,
+        gap: 14,
+    },
+
+    /* Card Styles */
     card: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
         padding: 14,
-        borderRadius: 14,
+        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: '#e5e5e5',
+        borderColor: '#E2E8F0',
+        shadowColor: '#0F2C59',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 10,
+        elevation: 3,
     },
-    cardIconWrapper: {
-        width: 44,
-        height: 44,
-        borderRadius: 10,
-        backgroundColor: '#f2f2f2',
+    cardImageWrapper: {
+        width: 68,
+        height: 68,
+        borderRadius: 16,
+        overflow: 'hidden',
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#EDF2F7',
+    },
+    cardImage: {
+        width: '100%',
+        height: '100%',
+    },
+    cardImagePlaceholder: {
+        width: '100%',
+        height: '100%',
         alignItems: 'center',
         justifyContent: 'center',
+        backgroundColor: '#F0F4F8',
     },
-    cardInfo: { flex: 1 },
-    cardModel: { fontSize: 15, fontWeight: '600', color: '#111' },
-    cardBrand: { fontSize: 13, color: '#8b8b8b', marginTop: 2 },
-    cardPlate: { fontSize: 12, color: '#5b5be0', marginTop: 2, fontWeight: '600' },
+    cardInfo: {
+        flex: 1,
+        marginLeft: 14,
+        justifyContent: 'center',
+    },
+    cardBrand: {
+        fontSize: 10,
+        fontWeight: '800',
+        color: '#64748B',
+        letterSpacing: 0.8,
+        marginBottom: 2,
+    },
+    cardModel: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#1A202C',
+        letterSpacing: -0.2,
+    },
+    plateTag: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 5,
+        marginTop: 6,
+        alignSelf: 'flex-start',
+        backgroundColor: '#EBF3FE',
+        borderRadius: 6,
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderWidth: 0.5,
+        borderColor: '#CBD5E1',
+    },
+    cardPlate: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#0F2C59',
+        letterSpacing: 0.5,
+    },
+    actionWrapper: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: '#F0F4F8',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginLeft: 8,
+    },
+
+    /* State Content Styles */
     centerContent: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 24,
-        gap: 10,
+        gap: 12,
     },
-    errorText: { fontSize: 14, color: '#d13c3c', textAlign: 'center' },
-    emptyText: { fontSize: 14, color: '#8b8b8b', textAlign: 'center' },
+    errorText: {
+        fontSize: 14,
+        color: '#E53E3E',
+        textAlign: 'center',
+        fontWeight: '500',
+    },
+    emptyText: {
+        fontSize: 14,
+        color: '#64748B',
+        textAlign: 'center',
+        fontWeight: '500',
+    },
     primaryButton: {
-        backgroundColor: '#111',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
+        backgroundColor: '#0F2C59',
+        paddingVertical: 12,
+        paddingHorizontal: 24,
         borderRadius: 12,
         marginTop: 4,
+        shadowColor: '#0F2C59',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+        elevation: 3,
     },
-    primaryButtonText: { color: '#fff', fontSize: 13, fontWeight: '600' },
+    primaryButtonText: {
+        color: '#FFFFFF',
+        fontSize: 13,
+        fontWeight: '600',
+    },
 });

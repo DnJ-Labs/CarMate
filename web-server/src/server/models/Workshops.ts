@@ -16,6 +16,7 @@ export interface IWorkshop
   extends IMongoloquentSchema, IMongoloquentTimestamps {
   adminId: string;
   name: string;
+  workshop_img?: string;
   address: string;
   location: {
     type: string;
@@ -41,6 +42,7 @@ export const bengkelSchema = z.object({
   operational_hours: z.array(operationalHourSchema),
   max_slot_per_day: z.number().int().nonnegative(),
   is_active: z.boolean(),
+  workshop_img: z.string().url().optional().or(z.literal("")),
 });
 
 export default class Workshop extends Model<IWorkshop> {

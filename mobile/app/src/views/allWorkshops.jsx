@@ -1,11 +1,14 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   Text,
   View,
+  TextInput,
   TouchableOpacity,
+  Image,
   FlatList,
-  ActivityIndicator,
   RefreshControl,
+  ActivityIndicator,
+  Animated,
 } from "react-native";
 import {
   SafeAreaView,
@@ -20,6 +23,62 @@ import styles from "../styles/allWorkshopsStyles";
 
 const LIMIT = 10;
 const TAB_BAR_HEIGHT = 40;
+const SKELETON_COUNT = 5;
+const SEARCH_DEBOUNCE_MS = 400;
+
+/* ---------------------------------------------------------
+ * SKELETON LOADING (pulse boxes)
+ * ------------------------------------------------------- */
+function SkeletonBox({ style }) {
+  const opacity = useRef(new Animated.Value(0.4)).current;
+
+  useEffect(() => {
+    const animation = Animated.loop(
+      Animated.sequence([
+        Animated.timing(opacity, {
+          toValue: 1,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacity, {
+          toValue: 0.4,
+          duration: 700,
+          useNativeDriver: true,
+        }),
+      ]),
+    );
+
+    animation.start();
+
+    return () => animation.stop();
+  }, [opacity]);
+
+  return <Animated.View style={[styles.skeletonBox, style, { opacity }]} />;
+}
+
+function WorkshopCardSkeleton() {
+  return (
+    <View style={styles.card}>
+      <SkeletonBox style={styles.cardImage} />
+
+      <View style={styles.cardInfo}>
+        <SkeletonBox style={styles.skeletonLineTitle} />
+        <SkeletonBox style={styles.skeletonLineAddress} />
+        <SkeletonBox style={styles.skeletonLineHours} />
+      </View>
+    </View>
+  );
+}
+
+function WorkshopListSkeleton() {
+  return (
+    <View style={styles.listContent}>
+      {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
+        <WorkshopCardSkeleton key={index} />
+      ))}
+    </View>
+  );
+}
 
 export function Workshop() {
   const navigation = useNavigation();
@@ -29,11 +88,26 @@ export function Workshop() {
   const [page, setPage] = useState(1);
   const [lastPage, setLastPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
+  // guards against onEndReached firing multiple times for the same page
+  const isFetchingRef = useRef(false);
+  // skips the debounce effect's fetch on first mount (useFocusEffect already handles it)
+  const isFirstSearchRunRef = useRef(true);
+  const searchTimeoutRef = useRef(null);
 
   const fetchWorkshops = useCallback(
-    async (pageToFetch = 1, isRefresh = false) => {
+    async (
+      pageToFetch = 1,
+      { append = false, isRefresh = false, searchTerm = "" } = {},
+    ) => {
+      if (isFetchingRef.current) return;
+      isFetchingRef.current = true;
+
       try {
         setError(null);
 
@@ -48,13 +122,18 @@ export function Workshop() {
           params: {
             page: pageToFetch,
             limit: LIMIT,
+            ...(searchTerm ? { search: searchTerm } : {}),
           },
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
 
-        setWorkshops(data.data ?? []);
+        const newWorkshops = data.data ?? [];
+
+        setWorkshops((prev) =>
+          append ? [...prev, ...newWorkshops] : newWorkshops,
+        );
         setLastPage(data.meta?.lastPage ?? 1);
         setPage(pageToFetch);
       } catch (err) {
@@ -63,7 +142,9 @@ export function Workshop() {
         );
       } finally {
         setLoading(false);
+        setLoadingMore(false);
         setRefreshing(false);
+        isFetchingRef.current = false;
       }
     },
     [],
@@ -72,27 +153,52 @@ export function Workshop() {
   useFocusEffect(
     useCallback(() => {
       setLoading(true);
-      fetchWorkshops(1);
+      fetchWorkshops(1, { searchTerm: search });
+      // only re-run on focus, not on every keystroke — search changes are
+      // handled by the debounce effect below
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [fetchWorkshops]),
   );
 
+  // debounce search input, then refetch from page 1
+  useEffect(() => {
+    if (isFirstSearchRunRef.current) {
+      isFirstSearchRunRef.current = false;
+      return;
+    }
+
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      setLoading(true);
+      fetchWorkshops(1, { searchTerm: search });
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(searchTimeoutRef.current);
+  }, [search, fetchWorkshops]);
+
   const onRefresh = () => {
     setRefreshing(true);
-    fetchWorkshops(page, true);
+    fetchWorkshops(1, { isRefresh: true, searchTerm: search });
   };
 
-  const goToPrevPage = () => {
-    if (page <= 1 || loading) return;
+  const loadMore = () => {
+    if (loading || loadingMore || refreshing) return;
+    if (page >= lastPage) return;
 
-    setLoading(true);
-    fetchWorkshops(page - 1);
+    setLoadingMore(true);
+    fetchWorkshops(page + 1, { append: true, searchTerm: search });
   };
 
-  const goToNextPage = () => {
-    if (page >= lastPage || loading) return;
-
+  const clearSearch = () => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+    setSearch("");
     setLoading(true);
-    fetchWorkshops(page + 1);
+    fetchWorkshops(1, { searchTerm: "" });
   };
 
   const getTodayHours = (operationalHours) => {
@@ -122,134 +228,81 @@ export function Workshop() {
   };
 
   const renderWorkshopCard = ({ item }) => (
-    <View style={styles.card}>
-      <View style={styles.workshopRow}>
-        <View style={styles.cardIconWrapper}>
-          <Ionicons name="construct-outline" size={22} color="#0F2C59" />
+    <TouchableOpacity
+      style={styles.card}
+      activeOpacity={0.85}
+      onPress={() =>
+        navigation.navigate("WorkshopDetail", {
+          workshopId: String(item._id),
+          workshop: item,
+        })
+      }
+    >
+      {item.workshop_img ? (
+        <Image
+          source={{ uri: item.workshop_img }}
+          style={styles.cardImage}
+          resizeMode="cover"
+        />
+      ) : (
+        <View style={[styles.cardImage, styles.cardImagePlaceholder]}>
+          <Ionicons name="construct-outline" size={28} color="#8CA3C7" />
         </View>
+      )}
 
-        <View style={styles.cardInfo}>
-          <View style={styles.cardNameRow}>
-            <Text style={styles.cardName}>{item.name}</Text>
+      {!item.is_active && (
+        <View style={styles.cardImageOverlay}>
+          <Text style={styles.cardImageOverlayText}>Tutup</Text>
+        </View>
+      )}
 
-            {!item.is_active && (
-              <View style={styles.inactiveBadge}>
-                <Text style={styles.inactiveBadgeText}>Tutup</Text>
-              </View>
-            )}
-          </View>
+      <View style={styles.cardInfo}>
+        <Text style={styles.cardName} numberOfLines={1}>
+          {item.name}
+        </Text>
 
-          {item.address && (
-            <Text style={styles.cardAddress} numberOfLines={1}>
+        {item.address && (
+          <View style={styles.cardMetaRow}>
+            <Ionicons name="location-outline" size={13} color="#94A3B8" />
+            <Text style={styles.cardAddress} numberOfLines={2}>
               {item.address}
             </Text>
-          )}
+          </View>
+        )}
 
-          {getTodayHours(item.operational_hours) && (
-            <View style={styles.hoursRow}>
-              <Ionicons name="time-outline" size={13} color="#64748B" />
-              <Text style={styles.cardHours}>
-                {getTodayHours(item.operational_hours)}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
+        {getTodayHours(item.operational_hours) && (
+          <View style={styles.hoursRow}>
+            <Ionicons name="time-outline" size={13} color="#94A3B8" />
+            <Text style={styles.cardHours}>
+              {getTodayHours(item.operational_hours)}
+            </Text>
+          </View>
+        )}
       </View>
 
-      {/* Booking Button */}
-      <TouchableOpacity
-        style={[
-          styles.bookingButton,
-          !item.is_active && styles.bookingButtonDisabled,
-        ]}
-        activeOpacity={0.8}
-        disabled={!item.is_active}
-        onPress={() =>
-          navigation.navigate("SelectVehicle", {
-            workshopId: String(item._id),
-            workshop: item,
-          })
-        }
-      >
-        <Text style={styles.bookingButtonText}>
-          {item.is_active ? "Booking" : "Workshop Tutup"}
-        </Text>
-      </TouchableOpacity>
-    </View>
+      <Ionicons
+        name="chevron-forward-outline"
+        size={18}
+        color="#CBD5E1"
+        style={styles.cardChevron}
+      />
+    </TouchableOpacity>
   );
 
-  const renderPagination = () => {
-    if (workshops.length === 0) {
-      return null;
+  const renderFooter = () => {
+    if (!loadingMore) {
+      // reserve space so the last card isn't hidden behind the tab bar
+      return <View style={{ height: TAB_BAR_HEIGHT + insets.bottom + 12 }} />;
     }
 
     return (
-      <View
-        style={[
-          styles.pagination,
-          {
-            paddingBottom: 12 + TAB_BAR_HEIGHT + insets.bottom,
-          },
-        ]}
-      >
-        <TouchableOpacity
-          style={[
-            styles.pageButton,
-            (page <= 1 || loading) && styles.pageButtonDisabled,
-          ]}
-          onPress={goToPrevPage}
-          disabled={page <= 1 || loading}
-          activeOpacity={0.7}
-        >
-          <Ionicons
-            name="chevron-back-outline"
-            size={16}
-            color={page <= 1 || loading ? "#A0AEC0" : "#0F2C59"}
-          />
-
-          <Text
-            style={[
-              styles.pageButtonText,
-              (page <= 1 || loading) && styles.pageButtonTextDisabled,
-            ]}
-          >
-            Prev
-          </Text>
-        </TouchableOpacity>
-
-        <Text style={styles.pageIndicator}>
-          Halaman {page} dari {lastPage}
-        </Text>
-
-        <TouchableOpacity
-          style={[
-            styles.pageButton,
-            (page >= lastPage || loading) && styles.pageButtonDisabled,
-          ]}
-          onPress={goToNextPage}
-          disabled={page >= lastPage || loading}
-          activeOpacity={0.7}
-        >
-          <Text
-            style={[
-              styles.pageButtonText,
-              (page >= lastPage || loading) && styles.pageButtonTextDisabled,
-            ]}
-          >
-            Next
-          </Text>
-
-          <Ionicons
-            name="chevron-forward-outline"
-            size={16}
-            color={page >= lastPage || loading ? "#A0AEC0" : "#0F2C59"}
-          />
-        </TouchableOpacity>
+      <View style={styles.skeletonFooterLoader}>
+        <ActivityIndicator size="small" color="#0F2C59" />
       </View>
     );
   };
+
+  const isSearching = search.trim().length > 0;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -267,36 +320,82 @@ export function Workshop() {
         </TouchableOpacity>
       </View>
 
+      {/* Search bar */}
+      <View
+        style={[
+          styles.searchWrapper,
+          isSearchFocused && styles.searchWrapperFocused,
+        ]}
+      >
+        <Ionicons
+          name="search-outline"
+          size={18}
+          color={isSearchFocused ? "#0F2C59" : "#94A3B8"}
+        />
+
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          onFocus={() => setIsSearchFocused(true)}
+          onBlur={() => setIsSearchFocused(false)}
+          placeholder="Cari nama workshop..."
+          placeholderTextColor="#94A3B8"
+          style={styles.searchInput}
+          returnKeyType="search"
+          autoCapitalize="none"
+          autoCorrect={false}
+        />
+
+        {isSearching && (
+          <TouchableOpacity
+            onPress={clearSearch}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="close-circle" size={18} color="#94A3B8" />
+          </TouchableOpacity>
+        )}
+      </View>
+
       {loading && !refreshing ? (
+        <WorkshopListSkeleton />
+      ) : error && workshops.length === 0 ? (
         <View style={styles.centerContent}>
-          <ActivityIndicator size="large" color="#0F2C59" />
-        </View>
-      ) : error ? (
-        <View style={styles.centerContent}>
-          <Ionicons name="alert-circle-outline" size={44} color="#E53E3E" />
+          <View style={styles.stateIconWrapper}>
+            <Ionicons name="alert-circle-outline" size={32} color="#E53E3E" />
+          </View>
 
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : workshops.length === 0 ? (
         <View style={styles.centerContent}>
-          <Ionicons name="construct-outline" size={48} color="#A0AEC0" />
+          <View style={styles.stateIconWrapper}>
+            <Ionicons
+              name={isSearching ? "search-outline" : "construct-outline"}
+              size={32}
+              color="#A0AEC0"
+            />
+          </View>
 
-          <Text style={styles.emptyText}>Belum ada workshop</Text>
+          <Text style={styles.emptyText}>
+            {isSearching
+              ? `Tidak ditemukan workshop untuk "${search}"`
+              : "Belum ada workshop"}
+          </Text>
         </View>
       ) : (
-        <>
-          <FlatList
-            data={workshops}
-            keyExtractor={(item) => String(item._id)}
-            renderItem={renderWorkshopCard}
-            contentContainerStyle={styles.listContent}
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-          />
-
-          {renderPagination()}
-        </>
+        <FlatList
+          data={workshops}
+          keyExtractor={(item) => String(item._id)}
+          renderItem={renderWorkshopCard}
+          contentContainerStyle={styles.listContent}
+          keyboardShouldPersistTaps="handled"
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          onEndReached={loadMore}
+          onEndReachedThreshold={0.4}
+          ListFooterComponent={renderFooter}
+        />
       )}
     </SafeAreaView>
   );
