@@ -35,7 +35,9 @@ export default function BookingHistory() {
         },
       });
 
-      setBookings(response.data);
+      const sortedBookings = [...response.data].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+
+      setBookings(sortedBookings);
     } catch (error) {
       console.log(
         "GET BOOKING HISTORY ERROR:",
