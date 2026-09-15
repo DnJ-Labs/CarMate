@@ -3,53 +3,64 @@ import { StyleSheet } from "react-native";
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F0F2F5", // Soft Light Cool Grey
   },
 
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 24,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#e5e5e5",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
   },
 
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
-    color: "#111",
+    color: "#0F2C59", // Royal Navy Blue
+    letterSpacing: -0.5,
   },
 
   nearestButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    paddingVertical: 7,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    backgroundColor: "#f2f2ff",
+    gap: 6,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 12,
+    backgroundColor: "#0F2C59",
+    shadowColor: "#0F2C59",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
 
   nearestButtonText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#5b5be0",
+    color: "#FFFFFF",
+    letterSpacing: 0.2,
   },
 
   listContent: {
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 16,
-    gap: 12,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 20,
+    gap: 16,
   },
 
   card: {
-    padding: 14,
-    borderRadius: 14,
+    padding: 16,
+    borderRadius: 20,
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#e5e5e5",
+    borderColor: "#E2E8F0",
+    shadowColor: "#64748B",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
 
   workshopRow: {
@@ -59,10 +70,10 @@ const styles = StyleSheet.create({
   },
 
   cardIconWrapper: {
-    width: 48,
-    height: 48,
-    borderRadius: 10,
-    backgroundColor: "#f2f2f2",
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: "#F0F4F8",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -79,89 +90,119 @@ const styles = StyleSheet.create({
 
   cardName: {
     flex: 1,
-    fontSize: 15,
-    fontWeight: "600",
-    color: "#111",
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1A202C",
   },
 
   cardAddress: {
     fontSize: 13,
-    color: "#8b8b8b",
+    fontWeight: "500",
+    color: "#64748B",
+    marginTop: 3,
+  },
+
+  hoursRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     marginTop: 4,
   },
 
   cardHours: {
     fontSize: 12,
-    color: "#5b5be0",
-    marginTop: 4,
+    fontWeight: "500",
+    color: "#64748B",
   },
 
   inactiveBadge: {
-    paddingHorizontal: 7,
+    paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
-    backgroundColor: "#fceaea",
+    borderRadius: 8,
+    backgroundColor: "#FFF5F5",
+    borderWidth: 1,
+    borderColor: "#FED7D7",
   },
 
   inactiveBadgeText: {
     fontSize: 10,
-    fontWeight: "600",
-    color: "#d13c3c",
+    fontWeight: "700",
+    color: "#E53E3E",
   },
 
   bookingButton: {
-    marginTop: 12,
-    paddingVertical: 11,
-    borderRadius: 10,
-    backgroundColor: "#4438F5",
+    marginTop: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: "#0F2C59",
     alignItems: "center",
+    justifyContent: "center",
+    shadowColor: "#0F2C59",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
   },
 
   bookingButtonDisabled: {
-    backgroundColor: "#d5d5d5",
+    backgroundColor: "#E2E8F0",
+    shadowOpacity: 0,
+    elevation: 0,
   },
 
   bookingButtonText: {
     fontSize: 13,
     fontWeight: "600",
-    color: "#fff",
+    color: "#FFFFFF",
+    letterSpacing: 0.3,
   },
 
   pagination: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 24,
+    paddingHorizontal: 20,
     paddingTop: 8,
   },
 
   pageButton: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 5,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
-    borderRadius: 8,
-    backgroundColor: "#f2f2f2",
+    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    shadowColor: "#64748B",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
 
   pageButtonDisabled: {
-    backgroundColor: "#f7f7f7",
+    backgroundColor: "#EDF2F7",
+    borderColor: "#E2E8F0",
+    shadowOpacity: 0,
+    elevation: 0,
   },
 
   pageButtonText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: "600",
-    color: "#111",
+    color: "#0F2C59",
   },
 
   pageButtonTextDisabled: {
-    color: "#c4c4c4",
+    color: "#A0AEC0",
   },
 
   pageIndicator: {
     fontSize: 12,
-    color: "#8b8b8b",
+    fontWeight: "600",
+    color: "#64748B",
   },
 
   centerContent: {
@@ -169,19 +210,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 24,
-    gap: 8,
+    gap: 12,
   },
 
   errorText: {
     fontSize: 14,
-    color: "#d13c3c",
+    color: "#E53E3E",
     textAlign: "center",
+    fontWeight: "500",
   },
 
   emptyText: {
     fontSize: 14,
-    color: "#8b8b8b",
+    color: "#8A94A6",
     textAlign: "center",
+    fontWeight: "500",
   },
 });
 
