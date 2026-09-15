@@ -127,7 +127,7 @@ export function Home() {
         style={styles.bookButton}
         activeOpacity={0.8}
         onPress={() =>
-          navigation.navigate("Booking", {
+          navigation.navigate("SelectWorkshop", {
             vehicleId: String(item.id ?? item._id),
           })
         }
