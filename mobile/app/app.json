@@ -39,7 +39,8 @@
           "locationAlwaysAndWhenInUsePermission": "Aplikasi butuh akses lokasi untuk mencari workshop terdekat."
         }
       ],
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-sharing"
     ]
   }
 }
