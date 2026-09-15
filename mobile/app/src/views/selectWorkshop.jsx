@@ -1,28 +1,31 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import {
     StyleSheet,
     Text,
     View,
+    TextInput,
     TouchableOpacity,
+    Image,
     FlatList,
     ActivityIndicator,
     RefreshControl,
     Modal,
     Pressable,
-    Dimensions,
+    Animated,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import * as SecureStore from 'expo-secure-store';
 import * as Location from 'expo-location';
 import axios from 'axios';
 import MapView, { Marker, Circle } from 'react-native-maps';
 import baseUrl from '../../constant/baseUrl';
 
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const MAP_HEIGHT = 220;
 const LIMIT = 10;
+const TAB_BAR_HEIGHT = 40;
+const SKELETON_COUNT = 5;
+const SEARCH_DEBOUNCE_MS = 400;
 
 const DISTANCE_OPTIONS = [
     { label: '5 km', value: 5000 },
@@ -34,31 +37,78 @@ function getDeltaForDistance(distanceMeters) {
     return Math.max((distanceMeters / 111000) * 2.4, 0.02);
 }
 
+/* ---------------------------------------------------------
+ * SKELETON LOADING (pulse box) — dipakai di kedua mode
+ * ------------------------------------------------------- */
+function SkeletonBox({ style }) {
+    const opacity = useRef(new Animated.Value(0.4)).current;
+
+    useEffect(() => {
+        const animation = Animated.loop(
+            Animated.sequence([
+                Animated.timing(opacity, { toValue: 1, duration: 700, useNativeDriver: true }),
+                Animated.timing(opacity, { toValue: 0.4, duration: 700, useNativeDriver: true }),
+            ])
+        );
+        animation.start();
+        return () => animation.stop();
+    }, [opacity]);
+
+    return <Animated.View style={[styles.skeletonBox, style, { opacity }]} />;
+}
+
+function WorkshopCardSkeleton() {
+    return (
+        <View style={styles.card}>
+            <SkeletonBox style={styles.cardImage} />
+            <View style={styles.cardInfo}>
+                <SkeletonBox style={styles.skeletonLineTitle} />
+                <SkeletonBox style={styles.skeletonLineAddress} />
+                <SkeletonBox style={styles.skeletonLineHours} />
+            </View>
+        </View>
+    );
+}
+
+function WorkshopListSkeleton() {
+    return (
+        <View style={styles.listContent}>
+            {Array.from({ length: SKELETON_COUNT }).map((_, index) => (
+                <WorkshopCardSkeleton key={index} />
+            ))}
+        </View>
+    );
+}
+
 export function SelectWorkshop() {
     const navigation = useNavigation();
-    const route = useRoute();
     const insets = useSafeAreaInsets();
     const mapRef = useRef(null);
 
-    const { vehicleId } = route.params ?? {};
-
     const [mode, setMode] = useState('all'); // 'all' | 'nearest'
 
+    /* ---------------- MODE: SEMUA (seperti code 3) ---------------- */
     const [workshops, setWorkshops] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [refreshing, setRefreshing] = useState(false);
-    const [error, setError] = useState(null);
-
-    // mode: all
     const [page, setPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
+    const [loading, setLoading] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
+    const [error, setError] = useState(null);
+    const [search, setSearch] = useState('');
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
 
-    // mode: nearest
+    const isFetchingRef = useRef(false);
+    const isFirstSearchRunRef = useRef(true);
+    const searchTimeoutRef = useRef(null);
+
+    /* ---------------- MODE: TERDEKAT (seperti code 2) ---------------- */
     const [userLocation, setUserLocation] = useState(null);
+    const [nearestWorkshops, setNearestWorkshops] = useState([]);
     const [distance, setDistance] = useState(5000);
     const [showDistancePicker, setShowDistancePicker] = useState(false);
     const [updatingLocation, setUpdatingLocation] = useState(false);
-    const [locationNotSet, setLocationNotSet] = useState(false);
+    const [nearestError, setNearestError] = useState(null);
 
     const getToken = async () => {
         const token = await SecureStore.getItemAsync('access_token');
@@ -72,7 +122,7 @@ export function SelectWorkshop() {
     const getDeviceLocation = async () => {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-            setError('Izin akses lokasi ditolak. Aktifkan lokasi di pengaturan.');
+            setNearestError('Izin akses lokasi ditolak. Aktifkan lokasi di pengaturan.');
             return null;
         }
         const position = await Location.getCurrentPositionAsync({
@@ -84,52 +134,66 @@ export function SelectWorkshop() {
         };
     };
 
-    const fetchAllWorkshops = useCallback(async (pageToFetch = 1) => {
-        try {
-            setError(null);
-            const token = await getToken();
-            if (!token) return;
+    /* ---------- fetch: semua workshop (logika dari code 3) ---------- */
+    const fetchWorkshops = useCallback(
+        async (pageToFetch = 1, { append = false, searchTerm = '' } = {}) => {
+            if (isFetchingRef.current) return;
+            isFetchingRef.current = true;
 
-            const { data } = await axios.get(`${baseUrl}/api/workshop`, {
-                params: { page: pageToFetch, limit: LIMIT },
-                headers: { Authorization: `Bearer ${token}` },
-            });
+            try {
+                setError(null);
+                const token = await getToken();
+                if (!token) return;
 
-            setWorkshops(data.data ?? []);
-            setLastPage(data.meta?.lastPage ?? 1);
-            setPage(pageToFetch);
-        } catch (err) {
-            setError(err.response?.data?.message || 'Gagal mengambil data workshop');
-        } finally {
-            setLoading(false);
-            setRefreshing(false);
-        }
-    }, []);
+                const { data } = await axios.get(`${baseUrl}/api/workshop`, {
+                    params: {
+                        page: pageToFetch,
+                        limit: LIMIT,
+                        ...(searchTerm ? { search: searchTerm } : {}),
+                    },
+                    headers: { Authorization: `Bearer ${token}` },
+                });
 
+                const newWorkshops = data.data ?? [];
+                setWorkshops((prev) => (append ? [...prev, ...newWorkshops] : newWorkshops));
+                setLastPage(data.meta?.lastPage ?? 1);
+                setPage(pageToFetch);
+            } catch (err) {
+                setError(err.response?.data?.message || 'Gagal mengambil data workshop');
+            } finally {
+                setLoading(false);
+                setLoadingMore(false);
+                setRefreshing(false);
+                isFetchingRef.current = false;
+            }
+        },
+        []
+    );
+
+    /* ---------- fetch: workshop terdekat (logika dari code 2) ---------- */
     const fetchNearestWorkshops = useCallback(async (dist) => {
         try {
-            setError(null);
-            const token = await getToken();
-            if (!token) return;
+            setNearestError(null);
+            const token = await SecureStore.getItemAsync('access_token');
+            if (!token) {
+                setNearestError('Sesi habis, silakan login ulang');
+                return;
+            }
 
             const { data } = await axios.get(`${baseUrl}/api/workshop/nearest`, {
                 params: { distance: dist },
                 headers: { Authorization: `Bearer ${token}` },
             });
 
-            setLocationNotSet(false);
-            setWorkshops(Array.isArray(data) ? data : []);
+            setNearestWorkshops(Array.isArray(data) ? data : []);
         } catch (err) {
             const message = err.response?.data?.message;
             if (message === 'User location is not set yet') {
-                setLocationNotSet(true);
-                setWorkshops([]);
+                setNearestWorkshops([]);
             } else {
-                setError(message || 'Gagal mengambil workshop terdekat');
+                setNearestError(message || 'Gagal mengambil workshop terdekat');
             }
         } finally {
-            setLoading(false);
-            setRefreshing(false);
             setUpdatingLocation(false);
         }
     }, []);
@@ -139,57 +203,72 @@ export function SelectWorkshop() {
         if (coords) setUserLocation(coords);
     }, []);
 
+    /* ---------------- focus effect: load data sesuai mode aktif ---------------- */
     useFocusEffect(
         useCallback(() => {
-            setLoading(true);
-            if (mode === 'nearest') {
+            if (mode === 'all') {
+                setLoading(true);
+                fetchWorkshops(1, { searchTerm: search });
+            } else {
                 loadDeviceLocationForMap();
                 fetchNearestWorkshops(distance);
-            } else {
-                fetchAllWorkshops(1);
             }
-        }, [mode, distance, fetchAllWorkshops, fetchNearestWorkshops, loadDeviceLocationForMap])
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [mode])
     );
+
+    /* ---------------- debounce pencarian (mode: semua) ---------------- */
+    useEffect(() => {
+        if (mode !== 'all') return;
+        if (isFirstSearchRunRef.current) {
+            isFirstSearchRunRef.current = false;
+            return;
+        }
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        searchTimeoutRef.current = setTimeout(() => {
+            setLoading(true);
+            fetchWorkshops(1, { searchTerm: search });
+        }, SEARCH_DEBOUNCE_MS);
+        return () => clearTimeout(searchTimeoutRef.current);
+    }, [search, mode, fetchWorkshops]);
 
     const switchMode = (next) => {
         if (next === mode) return;
         setMode(next);
-        setWorkshops([]);
         setError(null);
-        setLoading(true);
-        if (next === 'nearest') {
+        setNearestError(null);
+        if (next === 'all') {
+            setLoading(true);
+            fetchWorkshops(1, { searchTerm: search });
+        } else {
             loadDeviceLocationForMap();
             fetchNearestWorkshops(distance);
-        } else {
-            fetchAllWorkshops(1);
         }
     };
 
     const onRefresh = () => {
         setRefreshing(true);
-        if (mode === 'nearest') {
-            loadDeviceLocationForMap();
-            fetchNearestWorkshops(distance);
-        } else {
-            fetchAllWorkshops(page);
-        }
+        fetchWorkshops(1, { searchTerm: search });
     };
 
-    const goToPrevPage = () => {
-        if (page <= 1 || loading) return;
+    const loadMore = () => {
+        if (loading || loadingMore || refreshing) return;
+        if (page >= lastPage) return;
+        setLoadingMore(true);
+        fetchWorkshops(page + 1, { append: true, searchTerm: search });
+    };
+
+    const clearSearch = () => {
+        if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+        setSearch('');
         setLoading(true);
-        fetchAllWorkshops(page - 1);
+        fetchWorkshops(1, { searchTerm: '' });
     };
 
-    const goToNextPage = () => {
-        if (page >= lastPage || loading) return;
-        setLoading(true);
-        fetchAllWorkshops(page + 1);
-    };
-
+    /* ---------------- aksi mode terdekat ---------------- */
     const handleUpdateLocation = async () => {
         setUpdatingLocation(true);
-        setError(null);
+        setNearestError(null);
         try {
             const coords = await getDeviceLocation();
             if (!coords) {
@@ -197,8 +276,9 @@ export function SelectWorkshop() {
                 return;
             }
 
-            const token = await getToken();
+            const token = await SecureStore.getItemAsync('access_token');
             if (!token) {
+                setNearestError('Sesi habis, silakan login ulang');
                 setUpdatingLocation(false);
                 return;
             }
@@ -222,7 +302,7 @@ export function SelectWorkshop() {
 
             await fetchNearestWorkshops(distance);
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memperbarui lokasi');
+            setNearestError(err.response?.data?.message || 'Gagal memperbarui lokasi');
             setUpdatingLocation(false);
         }
     };
@@ -231,7 +311,6 @@ export function SelectWorkshop() {
         setShowDistancePicker(false);
         if (value === distance) return;
         setDistance(value);
-        setLoading(true);
         fetchNearestWorkshops(value);
         if (userLocation) {
             mapRef.current?.animateToRegion(
@@ -246,20 +325,7 @@ export function SelectWorkshop() {
         }
     };
 
-    const focusOnWorkshop = (item) => {
-        const coords = item.location?.coordinates;
-        if (!coords || !mapRef.current) return;
-        mapRef.current.animateToRegion(
-            {
-                latitude: coords[1],
-                longitude: coords[0],
-                latitudeDelta: getDeltaForDistance(Math.max(distance / 4, 1000)),
-                longitudeDelta: getDeltaForDistance(Math.max(distance / 4, 1000)),
-            },
-            500
-        );
-    };
-
+    /* ---------------- helper bersama ---------------- */
     const formatDistance = (meters) => {
         if (meters == null) return null;
         if (meters < 1000) return `${Math.round(meters)} m`;
@@ -268,151 +334,134 @@ export function SelectWorkshop() {
 
     const getTodayHours = (operationalHours) => {
         if (!operationalHours?.length) return null;
-        const days = [
-            'sunday', 'monday', 'tuesday', 'wednesday',
-            'thursday', 'friday', 'saturday',
-        ];
+        const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         const today = days[new Date().getDay()];
         const todaySchedule = operationalHours.find((h) => h.day === today);
         if (!todaySchedule) return 'Tutup hari ini';
         return `${todaySchedule.open} - ${todaySchedule.close}`;
     };
 
-    const handleSelect = (workshop) => {
-        if (vehicleId) {
-            // datang dari Home, vehicle sudah dipilih
-            navigation.navigate('Booking', {
-                vehicleId,
-                workshopId: String(workshop._id),
-                workshop,
-            });
-        } else {
-            // datang dari tombol + di tab bar, vehicle belum dipilih
-            navigation.navigate('SelectVehicle', {
-                workshopId: String(workshop._id),
-                workshop,
-            });
+    // Sama seperti code 2 & 3: tap card/marker langsung ke WorkshopDetail
+    const goToDetail = (workshop) => {
+        if (!workshop.is_active) return;
+        navigation.navigate('WorkshopDetail', {
+            workshopId: String(workshop._id),
+            workshop,
+        });
+    };
+
+    /* ---------------- render kartu (gaya code 3) ---------------- */
+    const renderWorkshopCard = ({ item }) => (
+        <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={() => goToDetail(item)}>
+            {item.workshop_img ? (
+                <Image source={{ uri: item.workshop_img }} style={styles.cardImage} resizeMode="cover" />
+            ) : (
+                <View style={[styles.cardImage, styles.cardImagePlaceholder]}>
+                    <Ionicons name="construct-outline" size={28} color="#8CA3C7" />
+                </View>
+            )}
+
+            {!item.is_active && (
+                <View style={styles.cardImageOverlay}>
+                    <Text style={styles.cardImageOverlayText}>Tutup</Text>
+                </View>
+            )}
+
+            <View style={styles.cardInfo}>
+                <Text style={styles.cardName} numberOfLines={1}>{item.name}</Text>
+
+                {item.address && (
+                    <View style={styles.cardMetaRow}>
+                        <Ionicons name="location-outline" size={13} color="#94A3B8" />
+                        <Text style={styles.cardAddress} numberOfLines={2}>{item.address}</Text>
+                    </View>
+                )}
+
+                {getTodayHours(item.operational_hours) && (
+                    <View style={styles.hoursRow}>
+                        <Ionicons name="time-outline" size={13} color="#94A3B8" />
+                        <Text style={styles.cardHours}>{getTodayHours(item.operational_hours)}</Text>
+                    </View>
+                )}
+            </View>
+
+            <Ionicons name="chevron-forward-outline" size={18} color="#CBD5E1" style={styles.cardChevron} />
+        </TouchableOpacity>
+    );
+
+    const renderFooter = () => {
+        if (!loadingMore) {
+            return <View style={{ height: TAB_BAR_HEIGHT + insets.bottom + 12 }} />;
         }
-    };
-
-    const renderWorkshopCard = ({ item }) => {
-        const dist = formatDistance(item.dist?.calculated);
-        const hours = getTodayHours(item.operational_hours);
-
         return (
-            <View style={styles.card}>
-                <TouchableOpacity
-                    style={styles.workshopRow}
-                    activeOpacity={0.7}
-                    onPress={() => (mode === 'nearest' ? focusOnWorkshop(item) : handleSelect(item))}
-                    disabled={mode === 'all' && !item.is_active}
-                >
-                    <View style={styles.cardIconWrapper}>
-                        <Ionicons name="construct-outline" size={22} color="#0F2C59" />
-                    </View>
-
-                    <View style={styles.cardInfo}>
-                        <View style={styles.cardNameRow}>
-                            <Text style={styles.cardName} numberOfLines={1}>
-                                {item.name}
-                            </Text>
-                            {!item.is_active && (
-                                <View style={styles.inactiveBadge}>
-                                    <Text style={styles.inactiveBadgeText}>Tutup</Text>
-                                </View>
-                            )}
-                        </View>
-
-                        {item.address && (
-                            <Text style={styles.cardAddress} numberOfLines={1}>
-                                {item.address}
-                            </Text>
-                        )}
-
-                        {hours && <Text style={styles.cardHours}>{hours}</Text>}
-                    </View>
-
-                    {dist ? (
-                        <View style={styles.distanceBadge}>
-                            <Ionicons name="navigate-outline" size={12} color="#0F2C59" />
-                            <Text style={styles.distanceBadgeText}>{dist}</Text>
-                        </View>
-                    ) : (
-                        <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
-                    )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={[styles.selectButton, !item.is_active && styles.selectButtonDisabled]}
-                    activeOpacity={0.8}
-                    disabled={!item.is_active}
-                    onPress={() => handleSelect(item)}
-                >
-                    <Text style={styles.selectButtonText}>
-                        {item.is_active ? 'Pilih Workshop' : 'Workshop Tutup'}
-                    </Text>
-                </TouchableOpacity>
+            <View style={styles.skeletonFooterLoader}>
+                <ActivityIndicator size="small" color="#0F2C59" />
             </View>
         );
     };
 
-    const renderPagination = () => {
-        if (mode !== 'all' || workshops.length === 0) return null;
+    const isSearching = search.trim().length > 0;
 
-        return (
-            <View style={[styles.pagination, { paddingBottom: 12 + insets.bottom }]}>
-                <TouchableOpacity
-                    style={[styles.pageButton, (page <= 1 || loading) && styles.pageButtonDisabled]}
-                    onPress={goToPrevPage}
-                    disabled={page <= 1 || loading}
-                    activeOpacity={0.7}
-                >
-                    <Ionicons
-                        name="chevron-back-outline"
-                        size={16}
-                        color={page <= 1 || loading ? '#A0AEC0' : '#0F2C59'}
-                    />
-                    <Text
-                        style={[
-                            styles.pageButtonText,
-                            (page <= 1 || loading) && styles.pageButtonTextDisabled,
-                        ]}
-                    >
-                        Prev
-                    </Text>
-                </TouchableOpacity>
-
-                <Text style={styles.pageIndicator}>
-                    Halaman {page} dari {lastPage}
-                </Text>
-
-                <TouchableOpacity
-                    style={[
-                        styles.pageButton,
-                        (page >= lastPage || loading) && styles.pageButtonDisabled,
-                    ]}
-                    onPress={goToNextPage}
-                    disabled={page >= lastPage || loading}
-                    activeOpacity={0.7}
-                >
-                    <Text
-                        style={[
-                            styles.pageButtonText,
-                            (page >= lastPage || loading) && styles.pageButtonTextDisabled,
-                        ]}
-                    >
-                        Next
-                    </Text>
-                    <Ionicons
-                        name="chevron-forward-outline"
-                        size={16}
-                        color={page >= lastPage || loading ? '#A0AEC0' : '#0F2C59'}
-                    />
-                </TouchableOpacity>
+    /* ---------------- tab: Semua (gaya code 3) ---------------- */
+    const renderAllTab = () => (
+        <>
+            <View style={[styles.searchWrapper, isSearchFocused && styles.searchWrapperFocused]}>
+                <Ionicons name="search-outline" size={18} color={isSearchFocused ? '#0F2C59' : '#94A3B8'} />
+                <TextInput
+                    value={search}
+                    onChangeText={setSearch}
+                    onFocus={() => setIsSearchFocused(true)}
+                    onBlur={() => setIsSearchFocused(false)}
+                    placeholder="Cari nama workshop..."
+                    placeholderTextColor="#94A3B8"
+                    style={styles.searchInput}
+                    returnKeyType="search"
+                    autoCapitalize="none"
+                    autoCorrect={false}
+                />
+                {isSearching && (
+                    <TouchableOpacity onPress={clearSearch} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                        <Ionicons name="close-circle" size={18} color="#94A3B8" />
+                    </TouchableOpacity>
+                )}
             </View>
-        );
-    };
 
+            {loading && !refreshing ? (
+                <WorkshopListSkeleton />
+            ) : error && workshops.length === 0 ? (
+                <View style={styles.centerContent}>
+                    <View style={styles.stateIconWrapper}>
+                        <Ionicons name="alert-circle-outline" size={32} color="#E53E3E" />
+                    </View>
+                    <Text style={styles.errorText}>{error}</Text>
+                </View>
+            ) : workshops.length === 0 ? (
+                <View style={styles.centerContent}>
+                    <View style={styles.stateIconWrapper}>
+                        <Ionicons name={isSearching ? 'search-outline' : 'construct-outline'} size={32} color="#A0AEC0" />
+                    </View>
+                    <Text style={styles.emptyText}>
+                        {isSearching ? `Tidak ditemukan workshop untuk "${search}"` : 'Belum ada workshop'}
+                    </Text>
+                </View>
+            ) : (
+                <FlatList
+                    data={workshops}
+                    keyExtractor={(item) => String(item._id)}
+                    renderItem={renderWorkshopCard}
+                    contentContainerStyle={[styles.listContent, { paddingBottom: 16 + insets.bottom }]}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+                    onEndReached={loadMore}
+                    onEndReachedThreshold={0.4}
+                    ListFooterComponent={renderFooter}
+                />
+            )}
+        </>
+    );
+
+    /* ---------------- tab: Terdekat (gaya code 2) ---------------- */
     const initialRegion = userLocation
         ? {
             latitude: userLocation.latitude,
@@ -422,101 +471,80 @@ export function SelectWorkshop() {
         }
         : undefined;
 
-    const renderContent = () => {
-        if (loading && !refreshing) {
-            return (
-                <View style={styles.centerContent}>
-                    <ActivityIndicator size="large" color="#0F2C59" />
-                </View>
-            );
-        }
-
-        if (mode === 'nearest' && locationNotSet) {
-            return (
-                <View style={styles.centerContent}>
-                    <Ionicons name="location-outline" size={44} color="#A0AEC0" />
-                    <Text style={styles.emptyText}>
-                        Lokasi Anda belum diatur. Perbarui lokasi untuk melihat workshop terdekat.
+    const renderNearestTab = () => (
+        <>
+            <View style={styles.distanceRow}>
+                <TouchableOpacity style={styles.distanceSelector} onPress={() => setShowDistancePicker(true)} activeOpacity={0.7}>
+                    <Ionicons name="options-outline" size={14} color="#0F2C59" />
+                    <Text style={styles.distanceSelectorText}>
+                        Radius {DISTANCE_OPTIONS.find((o) => o.value === distance)?.label}
                     </Text>
-                    <TouchableOpacity
-                        style={styles.primaryButton}
-                        onPress={handleUpdateLocation}
-                        disabled={updatingLocation}
-                        activeOpacity={0.8}
+                    <Ionicons name="chevron-down-outline" size={14} color="#64748B" />
+                </TouchableOpacity>
+
+                <TouchableOpacity onPress={handleUpdateLocation} disabled={updatingLocation} style={styles.updateLocationTextButton} activeOpacity={0.7}>
+                    <Text style={styles.updateLocationTextButtonText}>
+                        {updatingLocation ? 'Memperbarui...' : 'Perbarui lokasi saya'}
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            {nearestError && (
+                <View style={styles.errorBanner}>
+                    <Text style={styles.errorBannerText}>{nearestError}</Text>
+                </View>
+            )}
+
+            <View style={styles.mapWrapper}>
+                {userLocation ? (
+                    <MapView
+                        ref={mapRef}
+                        style={styles.map}
+                        initialRegion={initialRegion}
+                        showsUserLocation
+                        showsMyLocationButton={false}
                     >
-                        {updatingLocation ? (
-                            <ActivityIndicator size="small" color="#FFFFFF" />
-                        ) : (
-                            <Text style={styles.primaryButtonText}>Atur Lokasi Saya</Text>
+                        <Circle
+                            center={userLocation}
+                            radius={distance}
+                            strokeColor="rgba(15, 44, 89, 0.4)"
+                            fillColor="rgba(15, 44, 89, 0.08)"
+                        />
+                        <Marker coordinate={userLocation} title="Lokasi Anda" pinColor="#0F2C59" />
+                        {nearestWorkshops.map((item) =>
+                            item.location?.coordinates ? (
+                                <Marker
+                                    key={String(item._id)}
+                                    coordinate={{
+                                        latitude: item.location.coordinates[1],
+                                        longitude: item.location.coordinates[0],
+                                    }}
+                                    title={item.name}
+                                    description={`${formatDistance(item.dist?.calculated) || ''}${!item.is_active ? ' (Tutup)' : ''}`}
+                                    pinColor={item.is_active ? 'green' : 'red'}
+                                    onCalloutPress={() => goToDetail(item)}
+                                />
+                            ) : null
                         )}
-                    </TouchableOpacity>
-                </View>
-            );
-        }
-
-        if (error) {
-            return (
-                <View style={styles.centerContent}>
-                    <Ionicons name="alert-circle-outline" size={44} color="#E53E3E" />
-                    <Text style={styles.errorText}>{error}</Text>
-                </View>
-            );
-        }
-
-        if (workshops.length === 0) {
-            return (
-                <View style={styles.centerContent}>
-                    <Ionicons name="construct-outline" size={48} color="#A0AEC0" />
-                    <Text style={styles.emptyText}>
-                        {mode === 'nearest'
-                            ? `Tidak ada workshop dalam radius ${DISTANCE_OPTIONS.find((o) => o.value === distance)?.label}`
-                            : 'Belum ada workshop'}
-                    </Text>
-                </View>
-            );
-        }
-
-        return (
-            <>
-                <FlatList
-                    data={workshops}
-                    keyExtractor={(item) => String(item._id)}
-                    renderItem={renderWorkshopCard}
-                    contentContainerStyle={[
-                        styles.listContent,
-                        { paddingBottom: 16 + insets.bottom },
-                    ]}
-                    showsVerticalScrollIndicator={false}
-                    refreshControl={
-                        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-                    }
-                />
-                {renderPagination()}
-            </>
-        );
-    };
+                    </MapView>
+                ) : (
+                    <SkeletonBox style={styles.mapSkeleton} />
+                )}
+            </View>
+        </>
+    );
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
+        <SafeAreaView style={styles.container} edges={mode === 'all' ? ['top'] : ['top', 'bottom']}>
             <View style={styles.header}>
-                <TouchableOpacity
-                    onPress={() => navigation.goBack()}
-                    hitSlop={10}
-                    style={styles.backButton}
-                    activeOpacity={0.7}
-                >
+                <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10} style={styles.backButton} activeOpacity={0.7}>
                     <Ionicons name="chevron-back-outline" size={22} color="#0F2C59" />
                 </TouchableOpacity>
 
-                <Text style={styles.title}>Pilih Workshop</Text>
+                <Text style={styles.title}>Workshop</Text>
 
                 {mode === 'nearest' ? (
-                    <TouchableOpacity
-                        style={styles.updateButton}
-                        onPress={handleUpdateLocation}
-                        disabled={updatingLocation}
-                        activeOpacity={0.8}
-                    >
+                    <TouchableOpacity style={styles.updateButton} onPress={handleUpdateLocation} disabled={updatingLocation} activeOpacity={0.8}>
                         {updatingLocation ? (
                             <ActivityIndicator size="small" color="#0F2C59" />
                         ) : (
@@ -530,141 +558,27 @@ export function SelectWorkshop() {
 
             {/* Toggle Semua / Terdekat */}
             <View style={styles.modeSwitch}>
-                <TouchableOpacity
-                    style={[styles.modeButton, mode === 'all' && styles.modeButtonActive]}
-                    onPress={() => switchMode('all')}
-                    activeOpacity={0.8}
-                >
-                    <Ionicons
-                        name="list-outline"
-                        size={14}
-                        color={mode === 'all' ? '#FFFFFF' : '#64748B'}
-                    />
-                    <Text style={[styles.modeText, mode === 'all' && styles.modeTextActive]}>
-                        Semua
-                    </Text>
+                <TouchableOpacity style={[styles.modeButton, mode === 'all' && styles.modeButtonActive]} onPress={() => switchMode('all')} activeOpacity={0.8}>
+                    <Ionicons name="list-outline" size={14} color={mode === 'all' ? '#FFFFFF' : '#64748B'} />
+                    <Text style={[styles.modeText, mode === 'all' && styles.modeTextActive]}>Semua</Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity
-                    style={[styles.modeButton, mode === 'nearest' && styles.modeButtonActive]}
-                    onPress={() => switchMode('nearest')}
-                    activeOpacity={0.8}
-                >
-                    <Ionicons
-                        name="navigate-outline"
-                        size={14}
-                        color={mode === 'nearest' ? '#FFFFFF' : '#64748B'}
-                    />
-                    <Text style={[styles.modeText, mode === 'nearest' && styles.modeTextActive]}>
-                        Terdekat
-                    </Text>
+                <TouchableOpacity style={[styles.modeButton, mode === 'nearest' && styles.modeButtonActive]} onPress={() => switchMode('nearest')} activeOpacity={0.8}>
+                    <Ionicons name="navigate-outline" size={14} color={mode === 'nearest' ? '#FFFFFF' : '#64748B'} />
+                    <Text style={[styles.modeText, mode === 'nearest' && styles.modeTextActive]}>Terdekat</Text>
                 </TouchableOpacity>
             </View>
 
-            {mode === 'nearest' && (
-                <>
-                    <View style={styles.distanceRow}>
-                        <TouchableOpacity
-                            style={styles.distanceSelector}
-                            onPress={() => setShowDistancePicker(true)}
-                            activeOpacity={0.7}
-                        >
-                            <Ionicons name="options-outline" size={14} color="#0F2C59" />
-                            <Text style={styles.distanceSelectorText}>
-                                Radius {DISTANCE_OPTIONS.find((o) => o.value === distance)?.label}
-                            </Text>
-                            <Ionicons name="chevron-down-outline" size={14} color="#64748B" />
-                        </TouchableOpacity>
+            {mode === 'all' ? renderAllTab() : renderNearestTab()}
 
-                        <TouchableOpacity
-                            onPress={handleUpdateLocation}
-                            disabled={updatingLocation}
-                            style={styles.updateLocationTextButton}
-                            activeOpacity={0.7}
-                        >
-                            <Text style={styles.updateLocationTextButtonText}>
-                                {updatingLocation ? 'Memperbarui...' : 'Perbarui lokasi saya'}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <View style={styles.mapWrapper}>
-                        {userLocation ? (
-                            <MapView
-                                ref={mapRef}
-                                style={styles.map}
-                                initialRegion={initialRegion}
-                                showsUserLocation
-                                showsMyLocationButton={false}
-                            >
-                                <Circle
-                                    center={userLocation}
-                                    radius={distance}
-                                    strokeColor="rgba(15, 44, 89, 0.4)"
-                                    fillColor="rgba(15, 44, 89, 0.08)"
-                                />
-                                <Marker
-                                    coordinate={userLocation}
-                                    title="Lokasi Anda"
-                                    pinColor="#0F2C59"
-                                />
-                                {workshops.map((item) =>
-                                    item.location?.coordinates ? (
-                                        <Marker
-                                            key={String(item._id)}
-                                            coordinate={{
-                                                latitude: item.location.coordinates[1],
-                                                longitude: item.location.coordinates[0],
-                                            }}
-                                            title={item.name}
-                                            description={formatDistance(item.dist?.calculated) || ''}
-                                            onCalloutPress={() => handleSelect(item)}
-                                        />
-                                    ) : null
-                                )}
-                            </MapView>
-                        ) : (
-                            <View style={styles.mapPlaceholder}>
-                                <ActivityIndicator size="small" color="#0F2C59" />
-                                <Text style={styles.mapPlaceholderText}>Mengambil lokasi...</Text>
-                            </View>
-                        )}
-                    </View>
-                </>
-            )}
-
-            {renderContent()}
-
-            <Modal
-                visible={showDistancePicker}
-                transparent
-                animationType="fade"
-                onRequestClose={() => setShowDistancePicker(false)}
-            >
-                <Pressable
-                    style={styles.modalBackdrop}
-                    onPress={() => setShowDistancePicker(false)}
-                >
+            <Modal visible={showDistancePicker} transparent animationType="fade" onRequestClose={() => setShowDistancePicker(false)}>
+                <Pressable style={styles.modalBackdrop} onPress={() => setShowDistancePicker(false)}>
                     <View style={styles.modalSheet}>
                         <Text style={styles.modalTitle}>Pilih Radius</Text>
                         {DISTANCE_OPTIONS.map((opt) => (
-                            <TouchableOpacity
-                                key={opt.value}
-                                style={styles.modalOption}
-                                onPress={() => handleSelectDistance(opt.value)}
-                                activeOpacity={0.7}
-                            >
-                                <Text
-                                    style={[
-                                        styles.modalOptionText,
-                                        opt.value === distance && styles.modalOptionTextActive,
-                                    ]}
-                                >
-                                    {opt.label}
-                                </Text>
-                                {opt.value === distance && (
-                                    <Ionicons name="checkmark-outline" size={18} color="#0F2C59" />
-                                )}
+                            <TouchableOpacity key={opt.value} style={styles.modalOption} onPress={() => handleSelectDistance(opt.value)} activeOpacity={0.7}>
+                                <Text style={[styles.modalOptionText, opt.value === distance && styles.modalOptionTextActive]}>{opt.label}</Text>
+                                {opt.value === distance && <Ionicons name="checkmark-outline" size={18} color="#0F2C59" />}
                             </TouchableOpacity>
                         ))}
                     </View>
@@ -677,7 +591,7 @@ export function SelectWorkshop() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#F0F2F5', // Light Cool Grey
+        backgroundColor: '#F0F2F5',
     },
     header: {
         flexDirection: 'row',
@@ -702,12 +616,10 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 18,
         fontWeight: '700',
-        color: '#0F2C59', // Royal Navy Blue
+        color: '#0F2C59',
         letterSpacing: -0.3,
     },
-    headerPlaceholder: {
-        width: 40,
-    },
+    headerPlaceholder: { width: 40 },
     updateButton: {
         width: 40,
         height: 40,
@@ -728,6 +640,7 @@ const styles = StyleSheet.create({
         gap: 10,
         paddingHorizontal: 20,
         paddingTop: 14,
+        paddingBottom: 12,
     },
     modeButton: {
         flex: 1,
@@ -754,12 +667,117 @@ const styles = StyleSheet.create({
     },
     modeText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
     modeTextActive: { color: '#FFFFFF' },
+
+    /* ---------- gaya tab Semua (code 3) ---------- */
+    searchWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginHorizontal: 20,
+        marginBottom: 12,
+        paddingHorizontal: 14,
+        paddingVertical: 10,
+        borderRadius: 14,
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
+    searchWrapperFocused: {
+        borderColor: '#0F2C59',
+    },
+    searchInput: {
+        flex: 1,
+        fontSize: 14,
+        color: '#1A202C',
+        padding: 0,
+    },
+    listContent: {
+        paddingHorizontal: 20,
+        gap: 14,
+    },
+    card: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 12,
+        backgroundColor: '#FFFFFF',
+        borderRadius: 18,
+        padding: 12,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.06,
+        shadowRadius: 8,
+        elevation: 2,
+    },
+    cardImage: {
+        width: 64,
+        height: 64,
+        borderRadius: 14,
+        backgroundColor: '#EEF2F7',
+    },
+    cardImagePlaceholder: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cardImageOverlay: {
+        position: 'absolute',
+        top: 12,
+        left: 12,
+        width: 64,
+        height: 64,
+        borderRadius: 14,
+        backgroundColor: 'rgba(15, 23, 42, 0.55)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    cardImageOverlayText: {
+        color: '#FFFFFF',
+        fontSize: 11,
+        fontWeight: '700',
+    },
+    cardInfo: { flex: 1, gap: 4 },
+    cardName: { fontSize: 15, fontWeight: '700', color: '#1A202C' },
+    cardMetaRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    cardAddress: { fontSize: 12, fontWeight: '500', color: '#64748B', flexShrink: 1 },
+    hoursRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    cardHours: { fontSize: 12, fontWeight: '600', color: '#0F2C59' },
+    cardChevron: { marginLeft: 4 },
+    skeletonFooterLoader: {
+        paddingVertical: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    skeletonBox: { backgroundColor: '#E2E8F0', borderRadius: 8 },
+    skeletonLineTitle: { height: 14, width: '60%', borderRadius: 6, marginBottom: 8 },
+    skeletonLineAddress: { height: 11, width: '85%', borderRadius: 6, marginBottom: 6 },
+    skeletonLineHours: { height: 11, width: '40%', borderRadius: 6 },
+    centerContent: {
+        flex: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 24,
+        gap: 12,
+        paddingTop: 60,
+    },
+    stateIconWrapper: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: '#FFFFFF',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    errorText: { fontSize: 14, color: '#E53E3E', textAlign: 'center', fontWeight: '500' },
+    emptyText: { fontSize: 14, color: '#64748B', textAlign: 'center', fontWeight: '500' },
+
+    /* ---------- gaya tab Terdekat (code 2) ---------- */
     distanceRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingVertical: 12,
+        paddingBottom: 12,
     },
     distanceSelector: {
         flexDirection: 'row',
@@ -780,125 +798,24 @@ const styles = StyleSheet.create({
     distanceSelectorText: { fontSize: 12, fontWeight: '600', color: '#1A202C' },
     updateLocationTextButton: { paddingVertical: 6 },
     updateLocationTextButtonText: { fontSize: 12, fontWeight: '600', color: '#0F2C59' },
+    errorBanner: {
+        backgroundColor: '#FED7D7',
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        marginHorizontal: 20,
+        marginBottom: 8,
+        borderRadius: 8,
+    },
+    errorBannerText: { fontSize: 12, color: '#E53E3E', textAlign: 'center', fontWeight: '500' },
     mapWrapper: {
-        width: SCREEN_WIDTH,
-        height: MAP_HEIGHT,
+        flex: 1,
+        width: '100%',
         backgroundColor: '#E2E8F0',
-        borderTopWidth: 1,
-        borderBottomWidth: 1,
-        borderColor: '#E2E8F0',
     },
     map: { width: '100%', height: '100%' },
-    mapPlaceholder: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
-    mapPlaceholderText: { fontSize: 12, fontWeight: '500', color: '#64748B' },
-    listContent: { paddingHorizontal: 20, paddingTop: 16, gap: 16 },
-    card: {
-        borderRadius: 20,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#E2E8F0',
-        padding: 16,
-        gap: 14,
-        shadowColor: '#64748B',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.08,
-        shadowRadius: 10,
-        elevation: 4,
-    },
-    workshopRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    cardIconWrapper: {
-        width: 44,
-        height: 44,
-        borderRadius: 14,
-        backgroundColor: '#F0F4F8',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    cardInfo: { flex: 1 },
-    cardNameRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-    cardName: { fontSize: 16, fontWeight: '700', color: '#1A202C', flexShrink: 1 },
-    inactiveBadge: {
-        backgroundColor: '#FFF5F5',
-        borderRadius: 8,
-        borderWidth: 1,
-        borderColor: '#FED7D7',
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-    },
-    inactiveBadgeText: { fontSize: 10, fontWeight: '700', color: '#E53E3E' },
-    cardAddress: { fontSize: 13, fontWeight: '500', color: '#64748B', marginTop: 3 },
-    cardHours: { fontSize: 12, color: '#0F2C59', marginTop: 3, fontWeight: '600' },
-    distanceBadge: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        backgroundColor: '#F0F4F8',
-        borderRadius: 10,
-        paddingHorizontal: 10,
-        paddingVertical: 6,
-    },
-    distanceBadgeText: { fontSize: 12, fontWeight: '700', color: '#0F2C59' },
-    selectButton: {
-        backgroundColor: '#0F2C59',
-        paddingVertical: 12,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowColor: '#0F2C59',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
-        elevation: 3,
-    },
-    selectButtonDisabled: { backgroundColor: '#E2E8F0', shadowOpacity: 0, elevation: 0 },
-    selectButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600', letterSpacing: 0.3 },
-    pagination: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingTop: 12,
-        backgroundColor: '#F0F2F5',
-        borderTopWidth: 1,
-        borderTopColor: '#E2E8F0',
-    },
-    pageButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 10,
-        backgroundColor: '#FFFFFF',
-        borderWidth: 1,
-        borderColor: '#E2E8F0',
-    },
-    pageButtonDisabled: { backgroundColor: '#F0F2F5', borderColor: '#EDF2F7' },
-    pageButtonText: { fontSize: 13, fontWeight: '600', color: '#0F2C59' },
-    pageButtonTextDisabled: { color: '#A0AEC0' },
-    pageIndicator: { fontSize: 12, fontWeight: '500', color: '#64748B' },
-    centerContent: {
-        flex: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 24,
-        gap: 12,
-    },
-    errorText: { fontSize: 14, color: '#E53E3E', textAlign: 'center', fontWeight: '500' },
-    emptyText: { fontSize: 14, color: '#64748B', textAlign: 'center', fontWeight: '500' },
-    primaryButton: {
-        backgroundColor: '#0F2C59',
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-        borderRadius: 12,
-        marginTop: 4,
-        shadowColor: '#0F2C59',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 6,
-        elevation: 3,
-    },
-    primaryButtonText: { color: '#FFFFFF', fontSize: 13, fontWeight: '600' },
+    mapSkeleton: { width: '100%', height: '100%', borderRadius: 0 },
+
+    /* ---------- modal radius (dipakai kedua kode) ---------- */
     modalBackdrop: {
         flex: 1,
         backgroundColor: 'rgba(15, 23, 42, 0.4)',
