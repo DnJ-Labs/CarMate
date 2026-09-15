@@ -29,7 +29,6 @@ const DISTANCE_OPTIONS = [
     { label: '20 km', value: 20000 },
 ];
 
-// kira-kira 1 derajat latitude ~ 111km, dipakai buat nentuin zoom map sesuai radius
 function getDeltaForDistance(distanceMeters) {
     return Math.max((distanceMeters / 111000) * 2.4, 0.02);
 }
@@ -99,7 +98,6 @@ export function NearestWorkshop() {
         }
     }, [distance]);
 
-    // ambil lokasi device buat nge-center map, tanpa nyentuh data di server
     const loadDeviceLocationForMap = useCallback(async () => {
         const coords = await getDeviceLocation();
         if (coords) setUserLocation(coords);
@@ -216,7 +214,7 @@ export function NearestWorkshop() {
                     onPress={() => focusOnWorkshop(item)}
                 >
                     <View style={styles.cardIconWrapper}>
-                        <Ionicons name="construct-outline" size={24} color="#111" />
+                        <Ionicons name="construct-outline" size={22} color="#0F2C59" />
                     </View>
                     <View style={styles.cardInfo}>
                         <View style={styles.cardNameRow}>
@@ -237,7 +235,7 @@ export function NearestWorkshop() {
                     </View>
                     {dist && (
                         <View style={styles.distanceBadge}>
-                            <Ionicons name="navigate" size={12} color="#5b5be0" />
+                            <Ionicons name="navigate-outline" size={12} color="#0F2C59" />
                             <Text style={styles.distanceBadgeText}>{dist}</Text>
                         </View>
                     )}
@@ -278,19 +276,20 @@ export function NearestWorkshop() {
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10}>
-                    <Ionicons name="chevron-back" size={24} color="#111" />
+                <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10} activeOpacity={0.7}>
+                    <Ionicons name="chevron-back-outline" size={24} color="#0F2C59" />
                 </TouchableOpacity>
                 <Text style={styles.title}>Workshop Terdekat</Text>
                 <TouchableOpacity
                     style={styles.updateButton}
                     onPress={handleUpdateLocation}
                     disabled={updatingLocation}
+                    activeOpacity={0.8}
                 >
                     {updatingLocation ? (
-                        <ActivityIndicator size="small" color="#5b5be0" />
+                        <ActivityIndicator size="small" color="#0F2C59" />
                     ) : (
-                        <Ionicons name="locate-outline" size={18} color="#5b5be0" />
+                        <Ionicons name="locate-outline" size={18} color="#0F2C59" />
                     )}
                 </TouchableOpacity>
             </View>
@@ -299,18 +298,20 @@ export function NearestWorkshop() {
                 <TouchableOpacity
                     style={styles.distanceSelector}
                     onPress={() => setShowDistancePicker(true)}
+                    activeOpacity={0.7}
                 >
-                    <Ionicons name="options-outline" size={14} color="#111" />
+                    <Ionicons name="options-outline" size={14} color="#0F2C59" />
                     <Text style={styles.distanceSelectorText}>
                         Radius {DISTANCE_OPTIONS.find((o) => o.value === distance)?.label}
                     </Text>
-                    <Ionicons name="chevron-down" size={14} color="#8b8b8b" />
+                    <Ionicons name="chevron-down-outline" size={14} color="#64748B" />
                 </TouchableOpacity>
 
                 <TouchableOpacity
                     style={styles.updateLocationTextButton}
                     onPress={handleUpdateLocation}
                     disabled={updatingLocation}
+                    activeOpacity={0.7}
                 >
                     <Text style={styles.updateLocationTextButtonText}>
                         {updatingLocation ? 'Memperbarui...' : 'Perbarui lokasi saya'}
@@ -330,13 +331,13 @@ export function NearestWorkshop() {
                         <Circle
                             center={userLocation}
                             radius={distance}
-                            strokeColor="rgba(91,91,224,0.5)"
-                            fillColor="rgba(91,91,224,0.1)"
+                            strokeColor="rgba(15, 44, 89, 0.4)"
+                            fillColor="rgba(15, 44, 89, 0.08)"
                         />
                         <Marker
                             coordinate={userLocation}
                             title="Lokasi Anda"
-                            pinColor="#5b5be0"
+                            pinColor="#0F2C59"
                         />
                         {workshops.map((item) =>
                             item.location?.coordinates ? (
@@ -354,7 +355,7 @@ export function NearestWorkshop() {
                     </MapView>
                 ) : (
                     <View style={styles.mapPlaceholder}>
-                        <ActivityIndicator size="small" color="#111" />
+                        <ActivityIndicator size="small" color="#0F2C59" />
                         <Text style={styles.mapPlaceholderText}>Mengambil lokasi...</Text>
                     </View>
                 )}
@@ -362,11 +363,11 @@ export function NearestWorkshop() {
 
             {loading && !refreshing ? (
                 <View style={styles.centerContent}>
-                    <ActivityIndicator size="large" color="#111" />
+                    <ActivityIndicator size="large" color="#0F2C59" />
                 </View>
             ) : locationNotSet ? (
                 <View style={styles.centerContent}>
-                    <Ionicons name="location-outline" size={40} color="#c4c4c4" />
+                    <Ionicons name="location-outline" size={44} color="#A0AEC0" />
                     <Text style={styles.emptyText}>
                         Lokasi Anda belum diatur. Perbarui lokasi untuk melihat workshop
                         terdekat.
@@ -375,9 +376,10 @@ export function NearestWorkshop() {
                         style={styles.primaryButton}
                         onPress={handleUpdateLocation}
                         disabled={updatingLocation}
+                        activeOpacity={0.8}
                     >
                         {updatingLocation ? (
-                            <ActivityIndicator size="small" color="#fff" />
+                            <ActivityIndicator size="small" color="#FFFFFF" />
                         ) : (
                             <Text style={styles.primaryButtonText}>Atur Lokasi Saya</Text>
                         )}
@@ -385,12 +387,12 @@ export function NearestWorkshop() {
                 </View>
             ) : error ? (
                 <View style={styles.centerContent}>
-                    <Ionicons name="alert-circle-outline" size={40} color="#d13c3c" />
+                    <Ionicons name="alert-circle-outline" size={44} color="#E53E3E" />
                     <Text style={styles.errorText}>{error}</Text>
                 </View>
             ) : workshops.length === 0 ? (
                 <View style={styles.centerContent}>
-                    <Ionicons name="construct-outline" size={40} color="#c4c4c4" />
+                    <Ionicons name="construct-outline" size={48} color="#A0AEC0" />
                     <Text style={styles.emptyText}>
                         Tidak ada workshop dalam radius{' '}
                         {DISTANCE_OPTIONS.find((o) => o.value === distance)?.label}
@@ -428,6 +430,7 @@ export function NearestWorkshop() {
                                 key={opt.value}
                                 style={styles.modalOption}
                                 onPress={() => handleSelectDistance(opt.value)}
+                                activeOpacity={0.7}
                             >
                                 <Text
                                     style={[
@@ -438,7 +441,7 @@ export function NearestWorkshop() {
                                     {opt.label}
                                 </Text>
                                 {opt.value === distance && (
-                                    <Ionicons name="checkmark" size={18} color="#5b5be0" />
+                                    <Ionicons name="checkmark-outline" size={18} color="#0F2C59" />
                                 )}
                             </TouchableOpacity>
                         ))}
@@ -452,7 +455,7 @@ export function NearestWorkshop() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#F0F2F5', // Soft Light Cool Grey
     },
     header: {
         flexDirection: 'row',
@@ -460,43 +463,55 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 20,
         paddingVertical: 14,
-        borderBottomWidth: 1,
-        borderBottomColor: '#e5e5e5',
     },
     title: {
-        fontSize: 17,
+        fontSize: 18,
         fontWeight: '700',
-        color: '#111',
+        color: '#0F2C59', // Royal Navy Blue
+        letterSpacing: -0.3,
     },
     updateButton: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+        width: 36,
+        height: 36,
+        borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: '#eef0ff',
+        backgroundColor: '#FFFFFF',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     distanceRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingVertical: 10,
+        paddingBottom: 12,
     },
     distanceSelector: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 6,
-        paddingVertical: 6,
-        paddingHorizontal: 10,
-        borderRadius: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 12,
+        backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: '#e5e5e5',
+        borderColor: '#E2E8F0',
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 4,
+        elevation: 2,
     },
     distanceSelectorText: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#111',
+        color: '#1A202C',
     },
     updateLocationTextButton: {
         paddingVertical: 6,
@@ -504,12 +519,15 @@ const styles = StyleSheet.create({
     updateLocationTextButtonText: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#5b5be0',
+        color: '#0F2C59',
     },
     mapWrapper: {
         width: SCREEN_WIDTH,
         height: MAP_HEIGHT,
-        backgroundColor: '#f2f2f2',
+        backgroundColor: '#E2E8F0',
+        borderTopWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: '#E2E8F0',
     },
     map: {
         width: '100%',
@@ -523,19 +541,26 @@ const styles = StyleSheet.create({
     },
     mapPlaceholderText: {
         fontSize: 12,
-        color: '#8b8b8b',
+        fontWeight: '500',
+        color: '#64748B',
     },
     listContent: {
-        paddingHorizontal: 24,
-        paddingTop: 12,
-        gap: 12,
+        paddingHorizontal: 20,
+        paddingTop: 16,
+        gap: 16,
     },
     card: {
-        borderRadius: 14,
+        borderRadius: 20,
+        backgroundColor: '#FFFFFF',
         borderWidth: 1,
-        borderColor: '#e5e5e5',
-        padding: 14,
-        gap: 12,
+        borderColor: '#E2E8F0',
+        padding: 16,
+        gap: 14,
+        shadowColor: '#64748B',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.08,
+        shadowRadius: 10,
+        elevation: 4,
     },
     workshopRow: {
         flexDirection: 'row',
@@ -545,8 +570,8 @@ const styles = StyleSheet.create({
     cardIconWrapper: {
         width: 44,
         height: 44,
-        borderRadius: 10,
-        backgroundColor: '#f2f2f2',
+        borderRadius: 14,
+        backgroundColor: '#F0F4F8',
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -556,120 +581,142 @@ const styles = StyleSheet.create({
     cardNameRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap: 8,
     },
     cardName: {
-        fontSize: 15,
-        fontWeight: '600',
-        color: '#111',
+        fontSize: 16,
+        fontWeight: '700',
+        color: '#1A202C',
         flexShrink: 1,
     },
     inactiveBadge: {
-        backgroundColor: '#fdecec',
-        borderRadius: 6,
-        paddingHorizontal: 6,
-        paddingVertical: 2,
+        backgroundColor: '#FFF5F5',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#FED7D7',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
     },
     inactiveBadgeText: {
         fontSize: 10,
-        fontWeight: '600',
-        color: '#d13c3c',
+        fontWeight: '700',
+        color: '#E53E3E',
     },
     cardAddress: {
         fontSize: 13,
-        color: '#8b8b8b',
-        marginTop: 2,
+        fontWeight: '500',
+        color: '#64748B',
+        marginTop: 3,
     },
     distanceBadge: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 3,
-        backgroundColor: '#eef0ff',
-        borderRadius: 8,
-        paddingHorizontal: 8,
-        paddingVertical: 4,
+        gap: 4,
+        backgroundColor: '#F0F4F8',
+        borderRadius: 10,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
     },
     distanceBadgeText: {
-        fontSize: 11,
-        fontWeight: '600',
-        color: '#5b5be0',
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#0F2C59',
     },
     bookingButton: {
-        backgroundColor: '#111',
-        paddingVertical: 10,
-        borderRadius: 10,
+        backgroundColor: '#0F2C59',
+        paddingVertical: 12,
+        borderRadius: 12,
         alignItems: 'center',
+        justifyContent: 'center',
+        shadowColor: '#0F2C59',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+        elevation: 3,
     },
     bookingButtonDisabled: {
-        backgroundColor: '#e5e5e5',
+        backgroundColor: '#E2E8F0',
+        shadowOpacity: 0,
+        elevation: 0,
     },
     bookingButtonText: {
-        color: '#fff',
+        color: '#FFFFFF',
         fontSize: 13,
         fontWeight: '600',
+        letterSpacing: 0.3,
     },
     centerContent: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
         paddingHorizontal: 24,
-        gap: 10,
+        gap: 12,
     },
     errorText: {
         fontSize: 14,
-        color: '#d13c3c',
+        color: '#E53E3E',
         textAlign: 'center',
+        fontWeight: '500',
     },
     emptyText: {
         fontSize: 14,
-        color: '#8b8b8b',
+        color: '#64748B',
         textAlign: 'center',
+        fontWeight: '500',
     },
     primaryButton: {
-        backgroundColor: '#111',
-        paddingVertical: 10,
-        paddingHorizontal: 20,
+        backgroundColor: '#0F2C59',
+        paddingVertical: 12,
+        paddingHorizontal: 24,
         borderRadius: 12,
         marginTop: 4,
+        shadowColor: '#0F2C59',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 6,
+        elevation: 3,
     },
     primaryButtonText: {
-        color: '#fff',
+        color: '#FFFFFF',
         fontSize: 13,
         fontWeight: '600',
     },
     modalBackdrop: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.3)',
+        backgroundColor: 'rgba(15, 23, 42, 0.4)',
         justifyContent: 'flex-end',
     },
     modalSheet: {
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingHorizontal: 20,
-        paddingTop: 16,
-        paddingBottom: 32,
+        backgroundColor: '#FFFFFF',
+        borderTopLeftRadius: 24,
+        borderTopRightRadius: 24,
+        paddingHorizontal: 24,
+        paddingTop: 20,
+        paddingBottom: 36,
     },
     modalTitle: {
-        fontSize: 14,
+        fontSize: 12,
         fontWeight: '700',
-        color: '#8b8b8b',
-        marginBottom: 8,
+        color: '#64748B',
+        textTransform: 'uppercase',
+        letterSpacing: 0.8,
+        marginBottom: 12,
     },
     modalOption: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 14,
+        paddingVertical: 16,
         borderBottomWidth: 1,
-        borderBottomColor: '#f2f2f2',
+        borderBottomColor: '#F1F5F9',
     },
     modalOptionText: {
         fontSize: 15,
-        color: '#111',
+        color: '#1A202C',
+        fontWeight: '500',
     },
     modalOptionTextActive: {
-        color: '#5b5be0',
+        color: '#0F2C59',
         fontWeight: '700',
     },
 });

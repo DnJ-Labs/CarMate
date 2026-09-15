@@ -125,7 +125,7 @@ export function Workshop() {
     <View style={styles.card}>
       <View style={styles.workshopRow}>
         <View style={styles.cardIconWrapper}>
-          <Ionicons name="construct-outline" size={28} color="#111" />
+          <Ionicons name="construct-outline" size={22} color="#0F2C59" />
         </View>
 
         <View style={styles.cardInfo}>
@@ -146,13 +146,16 @@ export function Workshop() {
           )}
 
           {getTodayHours(item.operational_hours) && (
-            <Text style={styles.cardHours}>
-              {getTodayHours(item.operational_hours)}
-            </Text>
+            <View style={styles.hoursRow}>
+              <Ionicons name="time-outline" size={13} color="#64748B" />
+              <Text style={styles.cardHours}>
+                {getTodayHours(item.operational_hours)}
+              </Text>
+            </View>
           )}
         </View>
 
-        <Ionicons name="chevron-forward" size={20} color="#c4c4c4" />
+        <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
       </View>
 
       {/* Booking Button */}
@@ -198,11 +201,12 @@ export function Workshop() {
           ]}
           onPress={goToPrevPage}
           disabled={page <= 1 || loading}
+          activeOpacity={0.7}
         >
           <Ionicons
-            name="chevron-back"
+            name="chevron-back-outline"
             size={16}
-            color={page <= 1 || loading ? "#c4c4c4" : "#111"}
+            color={page <= 1 || loading ? "#A0AEC0" : "#0F2C59"}
           />
 
           <Text
@@ -226,6 +230,7 @@ export function Workshop() {
           ]}
           onPress={goToNextPage}
           disabled={page >= lastPage || loading}
+          activeOpacity={0.7}
         >
           <Text
             style={[
@@ -237,9 +242,9 @@ export function Workshop() {
           </Text>
 
           <Ionicons
-            name="chevron-forward"
+            name="chevron-forward-outline"
             size={16}
-            color={page >= lastPage || loading ? "#c4c4c4" : "#111"}
+            color={page >= lastPage || loading ? "#A0AEC0" : "#0F2C59"}
           />
         </TouchableOpacity>
       </View>
@@ -254,8 +259,9 @@ export function Workshop() {
         <TouchableOpacity
           style={styles.nearestButton}
           onPress={() => navigation.navigate("NearestWorkshop")}
+          activeOpacity={0.8}
         >
-          <Ionicons name="navigate-outline" size={16} color="#5b5be0" />
+          <Ionicons name="navigate-outline" size={15} color="#FFFFFF" />
 
           <Text style={styles.nearestButtonText}>Terdekat</Text>
         </TouchableOpacity>
@@ -263,17 +269,17 @@ export function Workshop() {
 
       {loading && !refreshing ? (
         <View style={styles.centerContent}>
-          <ActivityIndicator size="large" color="#111" />
+          <ActivityIndicator size="large" color="#0F2C59" />
         </View>
       ) : error ? (
         <View style={styles.centerContent}>
-          <Ionicons name="alert-circle-outline" size={40} color="#d13c3c" />
+          <Ionicons name="alert-circle-outline" size={44} color="#E53E3E" />
 
           <Text style={styles.errorText}>{error}</Text>
         </View>
       ) : workshops.length === 0 ? (
         <View style={styles.centerContent}>
-          <Ionicons name="construct-outline" size={40} color="#c4c4c4" />
+          <Ionicons name="construct-outline" size={48} color="#A0AEC0" />
 
           <Text style={styles.emptyText}>Belum ada workshop</Text>
         </View>

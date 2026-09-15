@@ -76,7 +76,7 @@ export default function Profile() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#5b5be0" />
+          <ActivityIndicator size="large" color="#0F2C59" />
         </View>
       </SafeAreaView>
     );
@@ -106,28 +106,28 @@ export default function Profile() {
 
         {/* Contact Information */}
         <View style={styles.infoCard}>
-          <TouchableOpacity style={styles.infoItem}>
+          <TouchableOpacity style={styles.infoItem} activeOpacity={0.7}>
             <View style={styles.infoIconWrapper}>
-              <Ionicons name="call-outline" size={18} color="#5b5be0" />
+              <Ionicons name="call-outline" size={18} color="#0F2C59" />
             </View>
             <View style={styles.infoContent}>
               <Text style={styles.label}>PHONE</Text>
               <Text style={styles.value}>{user?.phone || "-"}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#c4c4c4" />
+            <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
           </TouchableOpacity>
 
           <View style={styles.divider} />
 
-          <TouchableOpacity style={styles.infoItem}>
+          <TouchableOpacity style={styles.infoItem} activeOpacity={0.7}>
             <View style={styles.infoIconWrapper}>
-              <Ionicons name="mail-outline" size={18} color="#5b5be0" />
+              <Ionicons name="mail-outline" size={18} color="#0F2C59" />
             </View>
             <View style={styles.infoContent}>
               <Text style={styles.label}>EMAIL</Text>
               <Text style={styles.value}>{user?.email || "-"}</Text>
             </View>
-            <Ionicons name="chevron-forward" size={18} color="#c4c4c4" />
+            <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
           </TouchableOpacity>
         </View>
 
@@ -137,23 +137,24 @@ export default function Profile() {
         <View style={styles.menuCard}>
           <TouchableOpacity
             style={styles.menuItem}
+            activeOpacity={0.7}
             onPress={() => navigation.navigate("EditProfile", { user })}
           >
             <View style={styles.menuIconWrapper}>
-              <Ionicons name="person-outline" size={18} color="#111" />
+              <Ionicons name="person-outline" size={18} color="#0F2C59" />
             </View>
             <Text style={styles.menuText}>Edit Profile</Text>
-            <Ionicons name="chevron-forward" size={18} color="#c4c4c4" />
+            <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
           </TouchableOpacity>
 
           <View style={styles.divider} />
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
             <View style={styles.menuIconWrapper}>
-              <Ionicons name="settings-outline" size={18} color="#111" />
+              <Ionicons name="settings-outline" size={18} color="#0F2C59" />
             </View>
             <Text style={styles.menuText}>Settings</Text>
-            <Ionicons name="chevron-forward" size={18} color="#c4c4c4" />
+            <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
           </TouchableOpacity>
         </View>
 
@@ -161,39 +162,43 @@ export default function Profile() {
         <Text style={styles.sectionTitle}>Service</Text>
 
         <View style={styles.menuCard}>
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
             <View style={styles.menuIconWrapper}>
-              <Ionicons name="construct-outline" size={18} color="#111" />
+              <Ionicons name="construct-outline" size={18} color="#0F2C59" />
             </View>
             <Text style={styles.menuText}>Service History</Text>
-            <Ionicons name="chevron-forward" size={18} color="#c4c4c4" />
+            <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
           </TouchableOpacity>
 
           <View style={styles.divider} />
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
             <View style={styles.menuIconWrapper}>
-              <Ionicons name="calendar-outline" size={18} color="#111" />
+              <Ionicons name="calendar-outline" size={18} color="#0F2C59" />
             </View>
             <Text style={styles.menuText}>Booking History</Text>
-            <Ionicons name="chevron-forward" size={18} color="#c4c4c4" />
+            <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
           </TouchableOpacity>
 
           <View style={styles.divider} />
 
-          <TouchableOpacity style={styles.menuItem}>
+          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
             <View style={styles.menuIconWrapper}>
-              <Ionicons name="notifications-outline" size={18} color="#111" />
+              <Ionicons name="notifications-outline" size={18} color="#0F2C59" />
             </View>
             <Text style={styles.menuText}>Notifications</Text>
-            <Ionicons name="chevron-forward" size={18} color="#c4c4c4" />
+            <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
           </TouchableOpacity>
         </View>
 
         {/* Logout */}
-        <View style={[styles.logoutCard, { marginBottom: 24 }]}>
-          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
-            <Ionicons name="log-out-outline" size={18} color="#d13c3c" />
+        <View style={styles.logoutCard}>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}
+            activeOpacity={0.8}
+          >
+            <Ionicons name="log-out-outline" size={18} color="#E53E3E" />
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
         </View>
@@ -205,7 +210,7 @@ export default function Profile() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F0F2F5", // Soft Light Cool Grey
   },
   loadingContainer: {
     flex: 1,
@@ -213,63 +218,76 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   contentContainer: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
+    paddingHorizontal: 20,
+    paddingTop: 14,
     paddingBottom: 40,
   },
   title: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "700",
-    color: "#111",
+    color: "#0F2C59", // Royal Navy Blue
     marginBottom: 20,
+    letterSpacing: -0.5,
   },
   userSection: {
     alignItems: "center",
-    marginBottom: 28,
+    marginBottom: 24,
   },
   avatarWrapper: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: "#5b5be0",
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: "#0F2C59",
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 12,
+    shadowColor: "#0F2C59",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
   avatarText: {
-    fontSize: 30,
+    fontSize: 28,
     fontWeight: "700",
-    color: "#fff",
+    color: "#FFFFFF",
   },
   name: {
     fontSize: 18,
     fontWeight: "700",
-    color: "#111",
+    color: "#1A202C",
     marginBottom: 2,
   },
   username: {
     fontSize: 13,
-    color: "#8b8b8b",
+    fontWeight: "500",
+    color: "#64748B",
   },
   infoCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#e5e5e5",
-    borderRadius: 14,
+    borderColor: "#E2E8F0",
     marginBottom: 24,
     overflow: "hidden",
+    shadowColor: "#64748B",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   infoItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 14,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     gap: 12,
   },
   infoIconWrapper: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: "#eef0ff",
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#F0F4F8",
     alignItems: "center",
     justifyContent: "center",
   },
@@ -278,68 +296,76 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 11,
-    color: "#8b8b8b",
+    color: "#64748B",
     fontWeight: "600",
     letterSpacing: 0.5,
     marginBottom: 2,
   },
   value: {
     fontSize: 14,
-    color: "#111",
-    fontWeight: "500",
+    color: "#1A202C",
+    fontWeight: "600",
   },
   sectionTitle: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "700",
-    color: "#8b8b8b",
+    color: "#64748B",
     textTransform: "uppercase",
-    letterSpacing: 0.5,
-    marginBottom: 8,
-    marginTop: 4,
+    letterSpacing: 0.8,
+    marginBottom: 10,
+    marginLeft: 4,
   },
   menuCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#e5e5e5",
-    borderRadius: 14,
+    borderColor: "#E2E8F0",
     marginBottom: 24,
     overflow: "hidden",
+    shadowColor: "#64748B",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 14,
-    paddingHorizontal: 14,
+    paddingHorizontal: 16,
     gap: 12,
   },
   menuIconWrapper: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: "#f2f2f2",
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    backgroundColor: "#F0F4F8",
     alignItems: "center",
     justifyContent: "center",
   },
   menuText: {
     flex: 1,
     fontSize: 14,
-    color: "#111",
-    fontWeight: "500",
+    color: "#1A202C",
+    fontWeight: "600",
   },
   divider: {
     height: 1,
-    backgroundColor: "#e5e5e5",
-    marginLeft: 60,
-  },
-  arrow: {
-    fontSize: 20,
-    color: "#c4c4c4",
+    backgroundColor: "#F1F5F9",
+    marginLeft: 64,
   },
   logoutCard: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#f5c2c2",
-    borderRadius: 14,
-    backgroundColor: "#fdecec",
+    borderColor: "#FED7D7",
+    marginBottom: 24,
     overflow: "hidden",
+    shadowColor: "#E53E3E",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 8,
+    elevation: 2,
   },
   logoutButton: {
     flexDirection: "row",
@@ -347,10 +373,11 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 8,
     paddingVertical: 14,
+    backgroundColor: "#FFF5F5",
   },
   logoutText: {
     fontSize: 14,
     fontWeight: "700",
-    color: "#d13c3c",
+    color: "#E53E3E",
   },
 });
