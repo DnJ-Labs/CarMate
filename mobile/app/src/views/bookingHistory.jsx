@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useState, useEffect } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -10,15 +10,40 @@ import {
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import * as SecureStore from "expo-secure-store";
 import axios from "axios";
-
 import styles from "../styles/bookingHistoryStyles";
 import baseUrl from "../../constant/baseUrl";
+import socket from "../../socket";
 
 export default function BookingHistory() {
   const navigation = useNavigation();
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  useEffect(() => {
+    const handleBookingStatus = (data) => {
+      console.log("BOOKING HISTORY STATUS UPDATE:", data);
+
+      setBookings((prevBookings) =>
+        prevBookings.map((booking) => {
+          if (String(booking._id) !== String(data.booking_id)) {
+            return booking;
+          }
+
+          return {
+            ...booking,
+            status: data.status,
+          };
+        }),
+      );
+    };
+
+    socket.on("booking:status", handleBookingStatus);
+
+    return () => {
+      socket.off("booking:status", handleBookingStatus);
+    };
+  }, []);
 
   const fetchBookings = async () => {
     try {
