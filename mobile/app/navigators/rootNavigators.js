@@ -10,7 +10,7 @@ import { BookingForm } from '../src/views/bookingForm';
 import { SelectVehicle } from '../src/views/selectVehicle';
 import EditProfile from '../src/views/editProfile';
 import { EditVehicle } from '../src/views/editVehicle';
-import BookingDetail from '../src/views/bookingDetai';
+import BookingDetail from '../src/views/bookingDetail';
 import PaymentWebView from '../src/views/paymentWebView';
 
 

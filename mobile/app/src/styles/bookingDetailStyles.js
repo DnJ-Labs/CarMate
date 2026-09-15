@@ -315,4 +315,24 @@ export default StyleSheet.create({
     fontWeight: "700",
     color: "#FFFFFF",
   },
+  barcodeContainer: {
+    alignItems: "center",
+    marginTop: 8,
+  },
+
+  barcodeCode: {
+    marginTop: 14,
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#111827",
+    letterSpacing: 1,
+  },
+
+  barcodeDescription: {
+    marginTop: 8,
+    fontSize: 13,
+    lineHeight: 19,
+    color: "#6B7280",
+    textAlign: "center",
+  },
 });

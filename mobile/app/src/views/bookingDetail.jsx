@@ -19,6 +19,7 @@ import { Platform } from "react-native";
 import { File, Paths } from "expo-file-system";
 import * as FileSystemLegacy from "expo-file-system/legacy";
 import axios from "axios";
+import Barcode from "react-native-barcode-svg";
 
 import baseUrl from "../../constant/baseUrl";
 import styles from "../styles/bookingDetailStyles";
@@ -475,6 +476,30 @@ export default function BookingDetail() {
             </Text>
           </View>
         </View>
+
+        {/* =========================
+            BARCODE
+        ========================= */}
+
+        {booking.booking_code && (
+          <View style={styles.barcodeCard}>
+            <Text style={styles.sectionTitle}>Booking Barcode</Text>
+
+            <Barcode
+              value={booking.booking_code}
+              format="CODE128"
+              height={80}
+              width={2}
+              lineColor="#111827"
+            />
+
+            <Text style={styles.bookingCode}>{booking.booking_code}</Text>
+
+            <Text style={styles.barcodeDescription}>
+              Show this barcode at the workshop when you arrive.
+            </Text>
+          </View>
+        )}
 
         {/* =========================
             PAYMENT
