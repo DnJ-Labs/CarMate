@@ -46,7 +46,7 @@ export function AddVehicle({ navigation }) {
                     brand: brand.trim(),
                     model: model.trim(),
                     plate_number: plateNumber.trim(),
-                    vehicles_img: vehiclesImg.trim() || undefined,
+                    // vehicles_img: vehiclesImg.trim() || undefined,
                 },
                 {
                     headers: {

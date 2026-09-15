@@ -64,7 +64,26 @@ export default function BookingDetail() {
         },
       );
 
-      setBooking(bookingResponse.data);
+      const bookingData = bookingResponse.data
+
+      const [vehicleResponse, workshopResponse] = await Promise.all([
+        axios.get(`${baseUrl}/api/vehicles/${bookingData.vehicle_id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+        axios.get(`${baseUrl}/api/workshop/${bookingData.bengkel_id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }),
+      ]);
+
+      setBooking({
+        ...bookingData,
+        vehicle: vehicleResponse.data,
+        workshop: workshopResponse.data,
+      });
 
       // =========================
       // GET PAYMENT
@@ -553,9 +572,24 @@ export default function BookingDetail() {
           <Text style={styles.sectionTitle}>Vehicle</Text>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Vehicle ID</Text>
+            <Text style={styles.infoLabel}>Brand</Text>
+            <Text style={styles.infoValue}>
+              {booking.vehicle?.brand || "-"}
+            </Text>
+          </View>
 
-            <Text style={styles.infoValue}>{booking.vehicle_id || "-"}</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Model</Text>
+            <Text style={styles.infoValue}>
+              {booking.vehicle?.model || "-"}
+            </Text>
+          </View>
+
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Plate Number</Text>
+            <Text style={styles.infoValue}>
+              {booking.vehicle?.plate_number || "-"}
+            </Text>
           </View>
         </View>
 
@@ -567,9 +601,17 @@ export default function BookingDetail() {
           <Text style={styles.sectionTitle}>Workshop</Text>
 
           <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Workshop ID</Text>
+            <Text style={styles.infoLabel}>Name</Text>
+            <Text style={styles.infoValue}>
+              {booking.workshop?.name || "-"}
+            </Text>
+          </View>
 
-            <Text style={styles.infoValue}>{booking.bengkel_id || "-"}</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Address</Text>
+            <Text style={styles.infoValue}>
+              {booking.workshop?.address || "-"}
+            </Text>
           </View>
         </View>
 
