@@ -8,7 +8,7 @@ import { Home } from "../src/views/home";
 import Profile from "../src/views/profile";
 import { Workshop } from "../src/views/allWorkshops";
 import BookingHistory from "../src/views/bookingHistory";
-import AddBooking from "../src/views/addBooking";
+
 
 const Tab = createBottomTabNavigator();
 
@@ -74,28 +74,29 @@ export default function MainNavigator() {
       {/* BOOKING - CENTER BUTTON */}
 
       <Tab.Screen
-        name="Booking"
-        component={AddBooking}
-        options={({ navigation }) => ({
-          tabBarLabel: "Book",
-
-          tabBarIcon: () => (
+    name="Booking"
+    component={View} // placeholder, tidak pernah dirender
+    options={{
+        tabBarLabel: () => null,
+        tabBarIcon: () => (
             <View style={styles.bookingButton}>
-              <Feather name="plus" size={28} color="#FFFFFF" />
+                <Feather name="plus" size={28} color="#FFFFFF" />
             </View>
-          ),
-
-          tabBarButton: (props) => (
+        ),
+        tabBarButton: (props) => (
             <TouchableOpacity
-              {...props}
-              onPress={() => {
-                navigation.navigate("Booking");
-              }}
-              style={styles.bookingTabButton}
+                {...props}
+                style={styles.bookingTabButton}
             />
-          ),
-        })}
-      />
+        ),
+    }}
+    listeners={({ navigation }) => ({
+        tabPress: (e) => {
+            e.preventDefault(); // cegah pindah ke tab "Booking"
+            navigation.navigate("SelectWorkshop");
+        },
+    })}
+/>
 
       {/* BOOKING HISTORY */}
 
