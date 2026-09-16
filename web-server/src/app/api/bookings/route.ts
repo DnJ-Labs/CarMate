@@ -1,6 +1,9 @@
 import { errorHandler } from "@/server/helpers/errorHandler";
 import { BadRequestError } from "@/server/helpers/customError";
-import Booking, { createBookingSchema } from "@/server/models/Booking";
+import Booking, {
+  bookingStatusEnum,
+  createBookingSchema,
+} from "@/server/models/Booking";
 import Workshop, {
   IWorkshop,
   IOperationalHour,
@@ -110,11 +113,22 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const bookingCode = searchParams.get("booking_code");
+    const status = searchParams.get("status");
+
+    // Validasi status kalau ada di query params
+    if (status && !bookingStatusEnum.options.includes(status as any)) {
+      throw new BadRequestError(
+        `Invalid status. Must be one of: ${bookingStatusEnum.options.join(", ")}`,
+      );
+    }
 
     if (bookingCode) {
       const query = Booking.where("booking_code", bookingCode);
       if (role !== "admin") {
         query.where("user_id", userId);
+      }
+      if (status) {
+        query.where("status", status);
       }
 
       const booking = await query.first();
@@ -123,10 +137,14 @@ export async function GET(request: Request) {
       return Response.json(booking, { status: 200 });
     }
 
-    const bookings =
-      role === "admin"
-        ? await Booking.get()
-        : await Booking.where("user_id", userId).get();
+    const query =
+      role === "admin" ? Booking.query() : Booking.where("user_id", userId);
+
+    if (status) {
+      query.where("status", status);
+    }
+
+    const bookings = await query.get();
 
     return Response.json(bookings, { status: 200 });
   } catch (error: unknown) {
