@@ -1,10 +1,12 @@
 import React, { useContext, useState, useCallback } from "react";
 import {
   ActivityIndicator,
+  Modal,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,7 +18,11 @@ import * as SecureStore from 'expo-secure-store';
 import baseUrl from "../../constant/baseUrl";
 import { AuthContext } from '../context/AuthContext';
 
-const TAB_BAR_HEIGHT = 40; // kira-kira tinggi tab bar floating + jarak amannya
+const TAB_BAR_HEIGHT = 40;
+const NAVY = "#0F2C59";
+const NAVY_TINT = "rgba(15,44,89,0.06)";
+const HEADER_HEIGHT = 120;
+const AVATAR_SIZE = 104;
 
 export default function Profile() {
   const navigation = useNavigation();
@@ -26,8 +32,10 @@ export default function Profile() {
 
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [logoutModalVisible, setLogoutModalVisible] = useState(false);
 
-  const listBottomPadding = TAB_BAR_HEIGHT + insets.bottom;
+  // Extra space so the logout button is never hidden behind the floating tab bar
+  const listBottomPadding = TAB_BAR_HEIGHT + insets.bottom + 24;
 
   const fetchProfile = async () => {
     try {
@@ -58,6 +66,7 @@ export default function Profile() {
   };
 
   const handleLogout = async () => {
+    setLogoutModalVisible(false);
     await SecureStore.deleteItemAsync('access_token');
     setIsLogin(false);
   };
@@ -81,278 +90,307 @@ export default function Profile() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0F2C59" />
+          <ActivityIndicator size="large" color={NAVY} />
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        contentContainerStyle={[
-          styles.contentContainer,
-          { paddingBottom: listBottomPadding },
-        ]}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Header */}
+    <View style={styles.container}>
+      <View style={[styles.headerBg, { height: HEADER_HEIGHT + insets.top }]} />
+
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* ===== FIXED SECTION (tidak ikut scroll) ===== */}
         <Text style={styles.title}>Profile</Text>
 
-        {/* User Information */}
-        <View style={styles.userSection}>
+        <View style={styles.fixedTop}>
           <View style={styles.avatarWrapper}>
             <Text style={styles.avatarText}>{getInitials(user?.name)}</Text>
           </View>
 
-          <Text style={styles.name}>{user?.name || "-"}</Text>
-
+          <Text style={styles.name}>{user?.name || "[Nama Lengkap]"}</Text>
           <Text style={styles.username}>
-            {user?.username ? `@${user.username}` : "-"}
+            {user?.username ? `@${user.username}` : "@username"}
           </Text>
         </View>
 
-        {/* Contact Information */}
-        <View style={styles.infoCard}>
-          <TouchableOpacity style={styles.infoItem} activeOpacity={0.7}>
-            <View style={styles.infoIconWrapper}>
-              <Ionicons name="call-outline" size={18} color="#0F2C59" />
-            </View>
-            <View style={styles.infoContent}>
-              <Text style={styles.label}>PHONE</Text>
-              <Text style={styles.value}>{user?.phone || "-"}</Text>
-            </View>
-            <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
-          </TouchableOpacity>
+        {/* ===== SCROLLABLE SECTION ===== */}
+        <ScrollView
+          style={styles.scrollArea}
+          contentContainerStyle={[
+            styles.contentContainer,
+            { paddingBottom: listBottomPadding },
+          ]}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Contact + Account digabung satu card */}
+          <View style={styles.card}>
+            <TouchableOpacity style={styles.rowItem} activeOpacity={0.6}>
+              <View style={styles.iconWrapper}>
+                <Ionicons name="call-outline" size={17} color={NAVY} />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={styles.label}>Phone</Text>
+                <Text style={styles.value}>{user?.phone || "-"}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#C3CBD6" />
+            </TouchableOpacity>
 
-          <View style={styles.divider} />
+            <View style={styles.divider} />
 
-          <TouchableOpacity style={styles.infoItem} activeOpacity={0.7}>
-            <View style={styles.infoIconWrapper}>
-              <Ionicons name="mail-outline" size={18} color="#0F2C59" />
-            </View>
-            <View style={styles.infoContent}>
-              <Text style={styles.label}>EMAIL</Text>
-              <Text style={styles.value}>{user?.email || "-"}</Text>
-            </View>
-            <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity style={styles.rowItem} activeOpacity={0.6}>
+              <View style={styles.iconWrapper}>
+                <Ionicons name="mail-outline" size={17} color={NAVY} />
+              </View>
+              <View style={styles.rowContent}>
+                <Text style={styles.label}>Email</Text>
+                <Text style={styles.value}>{user?.email || "-"}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color="#C3CBD6" />
+            </TouchableOpacity>
 
-        {/* Account */}
-        <Text style={styles.sectionTitle}>Account</Text>
+            <View style={styles.divider} />
 
-        <View style={styles.menuCard}>
-          <TouchableOpacity
-            style={styles.menuItem}
-            activeOpacity={0.7}
-            onPress={() => navigation.navigate("EditProfile", { user })}
-          >
-            <View style={styles.menuIconWrapper}>
-              <Ionicons name="person-outline" size={18} color="#0F2C59" />
-            </View>
-            <Text style={styles.menuText}>Edit Profile</Text>
-            <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
-          </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.rowItem}
+              activeOpacity={0.6}
+              onPress={() => navigation.navigate("EditProfile", { user })}
+            >
+              <View style={styles.iconWrapper}>
+                <Ionicons name="person-outline" size={17} color={NAVY} />
+              </View>
+              <Text style={styles.rowText}>Edit Profile</Text>
+              <Ionicons name="chevron-forward" size={16} color="#C3CBD6" />
+            </TouchableOpacity>
 
-          <View style={styles.divider} />
+            <View style={styles.divider} />
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-            <View style={styles.menuIconWrapper}>
-              <Ionicons name="settings-outline" size={18} color="#0F2C59" />
-            </View>
-            <Text style={styles.menuText}>Settings</Text>
-            <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity style={styles.rowItem} activeOpacity={0.6}>
+              <View style={styles.iconWrapper}>
+                <Ionicons name="settings-outline" size={17} color={NAVY} />
+              </View>
+              <Text style={styles.rowText}>Settings</Text>
+              <Ionicons name="chevron-forward" size={16} color="#C3CBD6" />
+            </TouchableOpacity>
+          </View>
 
-        {/* Service */}
-        <Text style={styles.sectionTitle}>Service</Text>
+          {/* Service */}
+          <Text style={styles.sectionTitle}>Service</Text>
+          <View style={styles.card}>
+            <TouchableOpacity style={styles.rowItem} activeOpacity={0.6}>
+              <View style={styles.iconWrapper}>
+                <Ionicons name="construct-outline" size={17} color={NAVY} />
+              </View>
+              <Text style={styles.rowText}>Service History</Text>
+              <Ionicons name="chevron-forward" size={16} color="#C3CBD6" />
+            </TouchableOpacity>
 
-        <View style={styles.menuCard}>
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-            <View style={styles.menuIconWrapper}>
-              <Ionicons name="construct-outline" size={18} color="#0F2C59" />
-            </View>
-            <Text style={styles.menuText}>Service History</Text>
-            <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
-          </TouchableOpacity>
+            <View style={styles.divider} />
 
-          <View style={styles.divider} />
+            <TouchableOpacity style={styles.rowItem} activeOpacity={0.6}>
+              <View style={styles.iconWrapper}>
+                <Ionicons name="calendar-outline" size={17} color={NAVY} />
+              </View>
+              <Text style={styles.rowText}>Booking History</Text>
+              <Ionicons name="chevron-forward" size={16} color="#C3CBD6" />
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-            <View style={styles.menuIconWrapper}>
-              <Ionicons name="calendar-outline" size={18} color="#0F2C59" />
-            </View>
-            <Text style={styles.menuText}>Booking History</Text>
-            <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
-          </TouchableOpacity>
+            <View style={styles.divider} />
 
-          <View style={styles.divider} />
+            <TouchableOpacity style={styles.rowItem} activeOpacity={0.6}>
+              <View style={styles.iconWrapper}>
+                <Ionicons name="notifications-outline" size={17} color={NAVY} />
+              </View>
+              <Text style={styles.rowText}>Notifications</Text>
+              <Ionicons name="chevron-forward" size={16} color="#C3CBD6" />
+            </TouchableOpacity>
+          </View>
 
-          <TouchableOpacity style={styles.menuItem} activeOpacity={0.7}>
-            <View style={styles.menuIconWrapper}>
-              <Ionicons name="notifications-outline" size={18} color="#0F2C59" />
-            </View>
-            <Text style={styles.menuText}>Notifications</Text>
-            <Ionicons name="chevron-forward-outline" size={18} color="#A0AEC0" />
-          </TouchableOpacity>
-        </View>
-
-        {/* Logout */}
-        <View style={styles.logoutCard}>
+          {/* Logout */}
           <TouchableOpacity
             style={styles.logoutButton}
-            onPress={handleLogout}
-            activeOpacity={0.8}
+            onPress={() => setLogoutModalVisible(true)}
+            activeOpacity={0.6}
           >
-            <Ionicons name="log-out-outline" size={18} color="#E53E3E" />
+            <Ionicons name="log-out-outline" size={17} color="#E53E3E" />
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+        </ScrollView>
+      </SafeAreaView>
+
+      {/* ===== CUSTOM LOGOUT CONFIRMATION MODAL ===== */}
+      <Modal
+        visible={logoutModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLogoutModalVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setLogoutModalVisible(false)}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.modalCard}>
+                <View style={styles.modalIconWrapper}>
+                  <Ionicons name="log-out-outline" size={26} color="#E53E3E" />
+                </View>
+
+                <Text style={styles.modalTitle}>Log out of your account?</Text>
+                <Text style={styles.modalDescription}>
+                  You'll need to sign in again to access your account after logging out.
+                </Text>
+
+                <View style={styles.modalActions}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalCancelButton]}
+                    onPress={() => setLogoutModalVisible(false)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.modalCancelText}>Cancel</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.modalConfirmButton]}
+                    onPress={handleLogout}
+                    activeOpacity={0.85}
+                  >
+                    <Text style={styles.modalConfirmText}>Logout</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F0F2F5", // Soft Light Cool Grey
+    backgroundColor: "#FFFFFF",
+  },
+  headerBg: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: NAVY,
   },
   loadingContainer: {
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },
-  contentContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 40,
-  },
   title: {
-    fontSize: 22,
-    fontWeight: "700",
-    color: "#0F2C59", // Royal Navy Blue
-    marginBottom: 20,
-    letterSpacing: -0.5,
+    fontSize: 20,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    letterSpacing: -0.3,
+    paddingHorizontal: 24,
+    paddingTop: 8,
   },
-  userSection: {
+  fixedTop: {
     alignItems: "center",
-    marginBottom: 24,
+    paddingHorizontal: 24,
   },
   avatarWrapper: {
-    width: 84,
-    height: 84,
-    borderRadius: 42,
-    backgroundColor: "#0F2C59",
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
+    backgroundColor: "#FFFFFF",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
-    shadowColor: "#0F2C59",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
+    marginTop: HEADER_HEIGHT - AVATAR_SIZE / 2 - 36,
+    marginBottom: 14,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 5,
   },
   avatarText: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: "700",
-    color: "#FFFFFF",
+    color: NAVY,
   },
   name: {
-    fontSize: 18,
+    fontSize: 26,
     fontWeight: "700",
     color: "#1A202C",
-    marginBottom: 2,
+    marginBottom: 4,
+    letterSpacing: -0.3,
   },
   username: {
-    fontSize: 13,
+    fontSize: 16,
     fontWeight: "500",
-    color: "#64748B",
+    color: "#94A3B8",
+    marginBottom: 20,
   },
-  infoCard: {
+  scrollArea: {
+    flex: 1,
+  },
+  contentContainer: {
+    paddingHorizontal: 24,
+    paddingTop: 8,
+  },
+  sectionTitle: {
+    width: "100%",
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#94A3B8",
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    marginBottom: 12,
+    marginLeft: 4,
+  },
+  card: {
+    width: "100%",
     backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    marginBottom: 24,
+    borderRadius: 16,
+    marginBottom: 28,
     overflow: "hidden",
-    shadowColor: "#64748B",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 4,
+    shadowColor: "#0F2C59",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 12,
+    elevation: 2,
   },
-  infoItem: {
+  rowItem: {
     flexDirection: "row",
     alignItems: "center",
     paddingVertical: 14,
     paddingHorizontal: 16,
     gap: 12,
   },
-  infoIconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: "#F0F4F8",
+  iconWrapper: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: NAVY_TINT,
     alignItems: "center",
     justifyContent: "center",
   },
-  infoContent: {
+  rowContent: {
     flex: 1,
   },
-  label: {
-    fontSize: 11,
-    color: "#64748B",
-    fontWeight: "600",
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  value: {
+  rowText: {
+    flex: 1,
     fontSize: 14,
     color: "#1A202C",
     fontWeight: "600",
   },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#64748B",
+  label: {
+    fontSize: 10,
+    color: "#94A3B8",
+    fontWeight: "600",
+    letterSpacing: 0.4,
+    marginBottom: 2,
     textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: 10,
-    marginLeft: 4,
   },
-  menuCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#E2E8F0",
-    marginBottom: 24,
-    overflow: "hidden",
-    shadowColor: "#64748B",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  menuItem: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  menuIconWrapper: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    backgroundColor: "#F0F4F8",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  menuText: {
-    flex: 1,
+  value: {
     fontSize: 14,
     color: "#1A202C",
     fontWeight: "600",
@@ -360,32 +398,94 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: "#F1F5F9",
-    marginLeft: 64,
-  },
-  logoutCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#FED7D7",
-    marginBottom: 24,
-    overflow: "hidden",
-    shadowColor: "#E53E3E",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 2,
+    marginLeft: 62,
   },
   logoutButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    paddingVertical: 14,
-    backgroundColor: "#FFF5F5",
+    paddingVertical: 12,
+    marginTop: 4,
   },
   logoutText: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "600",
     color: "#E53E3E",
+  },
+
+  // ===== Modal styles =====
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(15,23,42,0.45)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 32,
+  },
+  modalCard: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 20,
+    paddingTop: 24,
+    paddingBottom: 16,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 20,
+    elevation: 10,
+  },
+  modalIconWrapper: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: "#FFF0F0",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 14,
+  },
+  modalTitle: {
+    fontSize: 17,
+    fontWeight: "700",
+    color: "#1A202C",
+    marginBottom: 6,
+    textAlign: "center",
+  },
+  modalDescription: {
+    fontSize: 13,
+    color: "#64748B",
+    textAlign: "center",
+    lineHeight: 19,
+    marginBottom: 20,
+    paddingHorizontal: 4,
+  },
+  modalActions: {
+    flexDirection: "row",
+    width: "100%",
+    gap: 10,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalCancelButton: {
+    backgroundColor: "#F1F5F9",
+  },
+  modalCancelText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#475569",
+  },
+  modalConfirmButton: {
+    backgroundColor: "#E53E3E",
+  },
+  modalConfirmText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#FFFFFF",
   },
 });

@@ -134,8 +134,7 @@ export function SelectVehicle() {
                     <Ionicons name="chevron-back-outline" size={22} color="#0F2C59" />
                 </TouchableOpacity>
 
-                <Text style={styles.title}>Pilih Kendaraan</Text>
-
+                <Text style={styles.title}>Select Vehicle</Text>
                 <View style={styles.headerPlaceholder} />
             </View>
 
@@ -145,7 +144,7 @@ export function SelectVehicle() {
 
                 <TextInput
                     style={styles.searchInput}
-                    placeholder="Cari model kendaraan..."
+                    placeholder="Search vehicle model..."
                     placeholderTextColor="#A0AEC0"
                     value={search}
                     onChangeText={setSearch}

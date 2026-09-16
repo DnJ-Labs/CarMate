@@ -38,7 +38,7 @@ function getDeltaForDistance(distanceMeters) {
 }
 
 /* ---------------------------------------------------------
- * SKELETON LOADING (pulse box) — dipakai di kedua mode
+ * SKELETON LOADING (pulse box)
  * ------------------------------------------------------- */
 function SkeletonBox({ style }) {
     const opacity = useRef(new Animated.Value(0.4)).current;
@@ -87,7 +87,7 @@ export function SelectWorkshop() {
 
     const [mode, setMode] = useState('all'); // 'all' | 'nearest'
 
-    /* ---------------- MODE: SEMUA (seperti code 3) ---------------- */
+    /* ---------------- MODE: ALL ---------------- */
     const [workshops, setWorkshops] = useState([]);
     const [page, setPage] = useState(1);
     const [lastPage, setLastPage] = useState(1);
@@ -102,7 +102,7 @@ export function SelectWorkshop() {
     const isFirstSearchRunRef = useRef(true);
     const searchTimeoutRef = useRef(null);
 
-    /* ---------------- MODE: TERDEKAT (seperti code 2) ---------------- */
+    /* ---------------- MODE: NEAREST ---------------- */
     const [userLocation, setUserLocation] = useState(null);
     const [nearestWorkshops, setNearestWorkshops] = useState([]);
     const [distance, setDistance] = useState(5000);
@@ -113,7 +113,7 @@ export function SelectWorkshop() {
     const getToken = async () => {
         const token = await SecureStore.getItemAsync('access_token');
         if (!token) {
-            setError('Sesi habis, silakan login ulang');
+            setError('Session expired, please log in again');
             return null;
         }
         return token;
@@ -122,7 +122,7 @@ export function SelectWorkshop() {
     const getDeviceLocation = async () => {
         const { status } = await Location.requestForegroundPermissionsAsync();
         if (status !== 'granted') {
-            setNearestError('Izin akses lokasi ditolak. Aktifkan lokasi di pengaturan.');
+            setNearestError('Location permission denied. Please enable it in settings.');
             return null;
         }
         const position = await Location.getCurrentPositionAsync({
@@ -134,7 +134,7 @@ export function SelectWorkshop() {
         };
     };
 
-    /* ---------- fetch: semua workshop (logika dari code 3) ---------- */
+    /* ---------- fetch: all workshops ---------- */
     const fetchWorkshops = useCallback(
         async (pageToFetch = 1, { append = false, searchTerm = '' } = {}) => {
             if (isFetchingRef.current) return;
@@ -159,7 +159,7 @@ export function SelectWorkshop() {
                 setLastPage(data.meta?.lastPage ?? 1);
                 setPage(pageToFetch);
             } catch (err) {
-                setError(err.response?.data?.message || 'Gagal mengambil data workshop');
+                setError(err.response?.data?.message || 'Failed to fetch workshop data');
             } finally {
                 setLoading(false);
                 setLoadingMore(false);
@@ -170,13 +170,13 @@ export function SelectWorkshop() {
         []
     );
 
-    /* ---------- fetch: workshop terdekat (logika dari code 2) ---------- */
+    /* ---------- fetch: nearest workshops ---------- */
     const fetchNearestWorkshops = useCallback(async (dist) => {
         try {
             setNearestError(null);
             const token = await SecureStore.getItemAsync('access_token');
             if (!token) {
-                setNearestError('Sesi habis, silakan login ulang');
+                setNearestError('Session expired, please log in again');
                 return;
             }
 
@@ -191,7 +191,7 @@ export function SelectWorkshop() {
             if (message === 'User location is not set yet') {
                 setNearestWorkshops([]);
             } else {
-                setNearestError(message || 'Gagal mengambil workshop terdekat');
+                setNearestError(message || 'Failed to fetch nearest workshops');
             }
         } finally {
             setUpdatingLocation(false);
@@ -203,7 +203,7 @@ export function SelectWorkshop() {
         if (coords) setUserLocation(coords);
     }, []);
 
-    /* ---------------- focus effect: load data sesuai mode aktif ---------------- */
+    /* ---------------- focus effect ---------------- */
     useFocusEffect(
         useCallback(() => {
             if (mode === 'all') {
@@ -217,7 +217,7 @@ export function SelectWorkshop() {
         }, [mode])
     );
 
-    /* ---------------- debounce pencarian (mode: semua) ---------------- */
+    /* ---------------- debounce search ---------------- */
     useEffect(() => {
         if (mode !== 'all') return;
         if (isFirstSearchRunRef.current) {
@@ -265,7 +265,7 @@ export function SelectWorkshop() {
         fetchWorkshops(1, { searchTerm: '' });
     };
 
-    /* ---------------- aksi mode terdekat ---------------- */
+    /* ---------------- actions: nearest mode ---------------- */
     const handleUpdateLocation = async () => {
         setUpdatingLocation(true);
         setNearestError(null);
@@ -278,7 +278,7 @@ export function SelectWorkshop() {
 
             const token = await SecureStore.getItemAsync('access_token');
             if (!token) {
-                setNearestError('Sesi habis, silakan login ulang');
+                setNearestError('Session expired, please log in again');
                 setUpdatingLocation(false);
                 return;
             }
@@ -302,7 +302,7 @@ export function SelectWorkshop() {
 
             await fetchNearestWorkshops(distance);
         } catch (err) {
-            setNearestError(err.response?.data?.message || 'Gagal memperbarui lokasi');
+            setNearestError(err.response?.data?.message || 'Failed to update location');
             setUpdatingLocation(false);
         }
     };
@@ -325,7 +325,7 @@ export function SelectWorkshop() {
         }
     };
 
-    /* ---------------- helper bersama ---------------- */
+    /* ---------------- helpers ---------------- */
     const formatDistance = (meters) => {
         if (meters == null) return null;
         if (meters < 1000) return `${Math.round(meters)} m`;
@@ -337,11 +337,10 @@ export function SelectWorkshop() {
         const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
         const today = days[new Date().getDay()];
         const todaySchedule = operationalHours.find((h) => h.day === today);
-        if (!todaySchedule) return 'Tutup hari ini';
+        if (!todaySchedule) return 'Closed today';
         return `${todaySchedule.open} - ${todaySchedule.close}`;
     };
 
-    // Sama seperti code 2 & 3: tap card/marker langsung ke WorkshopDetail
     const goToDetail = (workshop) => {
         if (!workshop.is_active) return;
         navigation.navigate('WorkshopDetail', {
@@ -350,7 +349,7 @@ export function SelectWorkshop() {
         });
     };
 
-    /* ---------------- render kartu (gaya code 3) ---------------- */
+    /* ---------------- render card ---------------- */
     const renderWorkshopCard = ({ item }) => (
         <TouchableOpacity style={styles.card} activeOpacity={0.85} onPress={() => goToDetail(item)}>
             {item.workshop_img ? (
@@ -363,7 +362,7 @@ export function SelectWorkshop() {
 
             {!item.is_active && (
                 <View style={styles.cardImageOverlay}>
-                    <Text style={styles.cardImageOverlayText}>Tutup</Text>
+                    <Text style={styles.cardImageOverlayText}>Closed</Text>
                 </View>
             )}
 
@@ -402,7 +401,7 @@ export function SelectWorkshop() {
 
     const isSearching = search.trim().length > 0;
 
-    /* ---------------- tab: Semua (gaya code 3) ---------------- */
+    /* ---------------- tab: All ---------------- */
     const renderAllTab = () => (
         <>
             <View style={[styles.searchWrapper, isSearchFocused && styles.searchWrapperFocused]}>
@@ -412,7 +411,7 @@ export function SelectWorkshop() {
                     onChangeText={setSearch}
                     onFocus={() => setIsSearchFocused(true)}
                     onBlur={() => setIsSearchFocused(false)}
-                    placeholder="Cari nama workshop..."
+                    placeholder="Search workshop name..."
                     placeholderTextColor="#94A3B8"
                     style={styles.searchInput}
                     returnKeyType="search"
@@ -441,7 +440,7 @@ export function SelectWorkshop() {
                         <Ionicons name={isSearching ? 'search-outline' : 'construct-outline'} size={32} color="#A0AEC0" />
                     </View>
                     <Text style={styles.emptyText}>
-                        {isSearching ? `Tidak ditemukan workshop untuk "${search}"` : 'Belum ada workshop'}
+                        {isSearching ? `No workshops found for "${search}"` : 'No workshops available'}
                     </Text>
                 </View>
             ) : (
@@ -461,7 +460,7 @@ export function SelectWorkshop() {
         </>
     );
 
-    /* ---------------- tab: Terdekat (gaya code 2) ---------------- */
+    /* ---------------- tab: Nearest ---------------- */
     const initialRegion = userLocation
         ? {
             latitude: userLocation.latitude,
@@ -484,7 +483,7 @@ export function SelectWorkshop() {
 
                 <TouchableOpacity onPress={handleUpdateLocation} disabled={updatingLocation} style={styles.updateLocationTextButton} activeOpacity={0.7}>
                     <Text style={styles.updateLocationTextButtonText}>
-                        {updatingLocation ? 'Memperbarui...' : 'Perbarui lokasi saya'}
+                        {updatingLocation ? 'Updating...' : 'Update my location'}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -510,7 +509,7 @@ export function SelectWorkshop() {
                             strokeColor="rgba(15, 44, 89, 0.4)"
                             fillColor="rgba(15, 44, 89, 0.08)"
                         />
-                        <Marker coordinate={userLocation} title="Lokasi Anda" pinColor="#0F2C59" />
+                        <Marker coordinate={userLocation} title="Your Location" pinColor="#0F2C59" />
                         {nearestWorkshops.map((item) =>
                             item.location?.coordinates ? (
                                 <Marker
@@ -520,7 +519,7 @@ export function SelectWorkshop() {
                                         longitude: item.location.coordinates[0],
                                     }}
                                     title={item.name}
-                                    description={`${formatDistance(item.dist?.calculated) || ''}${!item.is_active ? ' (Tutup)' : ''}`}
+                                    description={`${formatDistance(item.dist?.calculated) || ''}${!item.is_active ? ' (Closed)' : ''}`}
                                     pinColor={item.is_active ? 'green' : 'red'}
                                     onCalloutPress={() => goToDetail(item)}
                                 />
@@ -541,7 +540,7 @@ export function SelectWorkshop() {
                     <Ionicons name="chevron-back-outline" size={22} color="#0F2C59" />
                 </TouchableOpacity>
 
-                <Text style={styles.title}>Workshop</Text>
+                <Text style={styles.title}>Workshops</Text>
 
                 {mode === 'nearest' ? (
                     <TouchableOpacity style={styles.updateButton} onPress={handleUpdateLocation} disabled={updatingLocation} activeOpacity={0.8}>
@@ -556,16 +555,16 @@ export function SelectWorkshop() {
                 )}
             </View>
 
-            {/* Toggle Semua / Terdekat */}
+            {/* Toggle All / Nearest */}
             <View style={styles.modeSwitch}>
                 <TouchableOpacity style={[styles.modeButton, mode === 'all' && styles.modeButtonActive]} onPress={() => switchMode('all')} activeOpacity={0.8}>
                     <Ionicons name="list-outline" size={14} color={mode === 'all' ? '#FFFFFF' : '#64748B'} />
-                    <Text style={[styles.modeText, mode === 'all' && styles.modeTextActive]}>Semua</Text>
+                    <Text style={[styles.modeText, mode === 'all' && styles.modeTextActive]}>All</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={[styles.modeButton, mode === 'nearest' && styles.modeButtonActive]} onPress={() => switchMode('nearest')} activeOpacity={0.8}>
                     <Ionicons name="navigate-outline" size={14} color={mode === 'nearest' ? '#FFFFFF' : '#64748B'} />
-                    <Text style={[styles.modeText, mode === 'nearest' && styles.modeTextActive]}>Terdekat</Text>
+                    <Text style={[styles.modeText, mode === 'nearest' && styles.modeTextActive]}>Nearest</Text>
                 </TouchableOpacity>
             </View>
 
@@ -574,7 +573,7 @@ export function SelectWorkshop() {
             <Modal visible={showDistancePicker} transparent animationType="fade" onRequestClose={() => setShowDistancePicker(false)}>
                 <Pressable style={styles.modalBackdrop} onPress={() => setShowDistancePicker(false)}>
                     <View style={styles.modalSheet}>
-                        <Text style={styles.modalTitle}>Pilih Radius</Text>
+                        <Text style={styles.modalTitle}>Select Radius</Text>
                         {DISTANCE_OPTIONS.map((opt) => (
                             <TouchableOpacity key={opt.value} style={styles.modalOption} onPress={() => handleSelectDistance(opt.value)} activeOpacity={0.7}>
                                 <Text style={[styles.modalOptionText, opt.value === distance && styles.modalOptionTextActive]}>{opt.label}</Text>
@@ -668,7 +667,7 @@ const styles = StyleSheet.create({
     modeText: { fontSize: 13, fontWeight: '600', color: '#64748B' },
     modeTextActive: { color: '#FFFFFF' },
 
-    /* ---------- gaya tab Semua (code 3) ---------- */
+    /* ---------- search styles ---------- */
     searchWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -771,7 +770,7 @@ const styles = StyleSheet.create({
     errorText: { fontSize: 14, color: '#E53E3E', textAlign: 'center', fontWeight: '500' },
     emptyText: { fontSize: 14, color: '#64748B', textAlign: 'center', fontWeight: '500' },
 
-    /* ---------- gaya tab Terdekat (code 2) ---------- */
+    /* ---------- nearest tab styles ---------- */
     distanceRow: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -815,7 +814,7 @@ const styles = StyleSheet.create({
     map: { width: '100%', height: '100%' },
     mapSkeleton: { width: '100%', height: '100%', borderRadius: 0 },
 
-    /* ---------- modal radius (dipakai kedua kode) ---------- */
+    /* ---------- modal styles ---------- */
     modalBackdrop: {
         flex: 1,
         backgroundColor: 'rgba(15, 23, 42, 0.4)',

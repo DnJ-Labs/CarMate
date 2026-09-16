@@ -11,6 +11,8 @@ import {
     Modal,
     Pressable,
     Alert,
+    KeyboardAvoidingView,
+    Platform,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
@@ -157,7 +159,7 @@ export function BookingForm() {
     };
 
     const formatDate = (date) => {
-        if (!date) return "Pilih tanggal booking";
+        if (!date) return "Select booking date";
         return date.toLocaleDateString("id-ID", {
             day: "2-digit",
             month: "long",
@@ -210,10 +212,10 @@ export function BookingForm() {
     // ===== SUBMIT =====
 
     const handleSubmit = async () => {
-        if (!selectedVehicle) return Alert.alert("Validasi", "Pilih kendaraan terlebih dahulu.");
-        if (!selectedWorkshop) return Alert.alert("Validasi", "Pilih workshop terlebih dahulu.");
-        if (!bookingDate) return Alert.alert("Validasi", "Pilih tanggal booking.");
-        if (!bookingTimeSlot) return Alert.alert("Validasi", "Pilih jam booking.");
+        if (!selectedVehicle) return Alert.alert("Validation", "Please select a vehicle first.");
+        if (!selectedWorkshop) return Alert.alert("Validation", "Please select a workshop first.");
+        if (!bookingDate) return Alert.alert("Validation", "Please select a booking date.");
+        if (!bookingTimeSlot) return Alert.alert("Validation", "Please select a booking time slot.");
 
         try {
             setSubmitting(true);
@@ -330,153 +332,159 @@ export function BookingForm() {
                 <View style={{ width: 36 }} />
             </View>
 
-            <ScrollView
-                contentContainerStyle={[
-                    styles.content,
-                    { paddingBottom: 32 + insets.bottom },
-                ]}
-                showsVerticalScrollIndicator={false}
-                keyboardShouldPersistTaps="handled"
+            <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 24}
+                style={styles.flex}
             >
-                <Text style={styles.subtitle}>
-                    Pilih kendaraan, workshop, dan jadwal layanan pilihanmu.
-                </Text>
+                <ScrollView
+                    contentContainerStyle={[
+                        styles.content,
+                        { paddingBottom: 32 + insets.bottom },
+                    ]}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    <Text style={styles.subtitle}>
+                        Select your preferred vehicle, workshop, and service schedule.
+                    </Text>
 
-                {/* Vehicle Field */}
-                {renderSelectField({
-                    label: "Kendaraan",
-                    icon: "car-sport-outline",
-                    locked: isVehicleLocked,
-                    selected: selectedVehicle,
-                    placeholder: "Pilih kendaraan",
-                    title: selectedVehicle
-                        ? `${selectedVehicle.brand ?? ""} ${selectedVehicle.model ?? ""}`.trim()
-                        : "",
-                    subtitle: selectedVehicle?.plate_number,
-                    onPress: () => setPickerVisible("vehicle"),
-                })}
+                    {/* Vehicle Field */}
+                    {renderSelectField({
+                        label: "Vehicle",
+                        icon: "car-sport-outline",
+                        locked: isVehicleLocked,
+                        selected: selectedVehicle,
+                        placeholder: "Select Vehicle",
+                        title: selectedVehicle
+                            ? `${selectedVehicle.brand ?? ""} ${selectedVehicle.model ?? ""}`.trim()
+                            : "",
+                        subtitle: selectedVehicle?.plate_number,
+                        onPress: () => setPickerVisible("vehicle"),
+                    })}
 
-                {/* Workshop Field */}
-                {renderSelectField({
-                    label: "Workshop",
-                    icon: "construct-outline",
-                    locked: isWorkshopLocked,
-                    selected: selectedWorkshop,
-                    placeholder: "Pilih workshop",
-                    title: selectedWorkshop?.name,
-                    subtitle: selectedWorkshop?.address,
-                    onPress: () => setPickerVisible("workshop"),
-                })}
+                    {/* Workshop Field */}
+                    {renderSelectField({
+                        label: "Workshop",
+                        icon: "construct-outline",
+                        locked: isWorkshopLocked,
+                        selected: selectedWorkshop,
+                        placeholder: "Select vehicle",
+                        title: selectedWorkshop?.name,
+                        subtitle: selectedWorkshop?.address,
+                        onPress: () => setPickerVisible("workshop"),
+                    })}
 
-                {/* Booking Date Field */}
-                <View style={styles.fieldContainer}>
-                    <Text style={styles.label}>Tanggal Booking</Text>
+                    {/* Booking Date Field */}
+                    <View style={styles.fieldContainer}>
+                        <Text style={styles.label}>Booking Date</Text>
 
-                    <TouchableOpacity
-                        style={styles.neumorphicInput}
-                        activeOpacity={0.75}
-                        onPress={() => setShowDatePicker(true)}
-                    >
-                        <View style={styles.inputLeftIcon}>
-                            <Ionicons
-                                name="calendar-clear-outline"
-                                size={20}
-                                color={bookingDate ? "#0F2C59" : "#94A3B8"}
+                        <TouchableOpacity
+                            style={styles.neumorphicInput}
+                            activeOpacity={0.75}
+                            onPress={() => setShowDatePicker(true)}
+                        >
+                            <View style={styles.inputLeftIcon}>
+                                <Ionicons
+                                    name="calendar-clear-outline"
+                                    size={20}
+                                    color={bookingDate ? "#0F2C59" : "#94A3B8"}
+                                />
+                            </View>
+                            <Text style={bookingDate ? styles.selectedTitle : styles.placeholder}>
+                                {formatDate(bookingDate)}
+                            </Text>
+                        </TouchableOpacity>
+
+                        {showDatePicker && (
+                            <DateTimePicker
+                                value={bookingDate || new Date()}
+                                mode="date"
+                                display="default"
+                                minimumDate={new Date()}
+                                onChange={handleDateChange}
+                            />
+                        )}
+                    </View>
+
+                    {/* Time Slot Field */}
+                    <View style={styles.fieldContainer}>
+                        <Text style={styles.label}>Operating Hours</Text>
+
+                        {!bookingDate || !selectedWorkshop ? (
+                            <View style={[styles.neumorphicInput, styles.inputDisabled]}>
+                                <Ionicons name="time-outline" size={18} color="#94A3B8" style={{ marginRight: 8 }} />
+                                <Text style={styles.placeholder}>
+                                    Select workshop &amp; date first
+                                </Text>
+                            </View>
+                        ) : timeSlots.length === 0 ? (
+                            <View style={[styles.neumorphicInput, styles.inputDisabled]}>
+                                <Ionicons name="alert-circle-outline" size={18} color="#EF4444" style={{ marginRight: 8 }} />
+                                <Text style={styles.emptyInlineText}>
+                                    Workshop tutup pada tanggal ini
+                                </Text>
+                            </View>
+                        ) : (
+                            <View style={styles.timeGrid}>
+                                {timeSlots.map((slot) => {
+                                    const active = bookingTimeSlot === slot;
+                                    return (
+                                        <TouchableOpacity
+                                            key={slot}
+                                            style={[styles.timeChip, active && styles.timeChipActive]}
+                                            activeOpacity={0.8}
+                                            onPress={() => setBookingTimeSlot(slot)}
+                                        >
+                                            <Text
+                                                style={[
+                                                    styles.timeChipText,
+                                                    active && styles.timeChipTextActive,
+                                                ]}
+                                            >
+                                                {slot}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+                        )}
+                    </View>
+
+                    {/* Notes Field */}
+                    <View style={styles.fieldContainer}>
+                        <Text style={styles.label}>Notes(Opsional)</Text>
+
+                        <View style={styles.notesBox}>
+                            <TextInput
+                                value={notes}
+                                onChangeText={setNotes}
+                                placeholder="Describe the issue or specific service required"
+                                placeholderTextColor="#94A3B8"
+                                multiline
+                                style={styles.notesInput}
                             />
                         </View>
-                        <Text style={bookingDate ? styles.selectedTitle : styles.placeholder}>
-                            {formatDate(bookingDate)}
-                        </Text>
-                    </TouchableOpacity>
-
-                    {showDatePicker && (
-                        <DateTimePicker
-                            value={bookingDate || new Date()}
-                            mode="date"
-                            display="default"
-                            minimumDate={new Date()}
-                            onChange={handleDateChange}
-                        />
-                    )}
-                </View>
-
-                {/* Time Slot Field */}
-                <View style={styles.fieldContainer}>
-                    <Text style={styles.label}>Jam Operasional</Text>
-
-                    {!bookingDate || !selectedWorkshop ? (
-                        <View style={[styles.neumorphicInput, styles.inputDisabled]}>
-                            <Ionicons name="time-outline" size={18} color="#94A3B8" style={{ marginRight: 8 }} />
-                            <Text style={styles.placeholder}>
-                                Pilih workshop &amp; tanggal terlebih dahulu
-                            </Text>
-                        </View>
-                    ) : timeSlots.length === 0 ? (
-                        <View style={[styles.neumorphicInput, styles.inputDisabled]}>
-                            <Ionicons name="alert-circle-outline" size={18} color="#EF4444" style={{ marginRight: 8 }} />
-                            <Text style={styles.emptyInlineText}>
-                                Workshop tutup pada tanggal ini
-                            </Text>
-                        </View>
-                    ) : (
-                        <View style={styles.timeGrid}>
-                            {timeSlots.map((slot) => {
-                                const active = bookingTimeSlot === slot;
-                                return (
-                                    <TouchableOpacity
-                                        key={slot}
-                                        style={[styles.timeChip, active && styles.timeChipActive]}
-                                        activeOpacity={0.8}
-                                        onPress={() => setBookingTimeSlot(slot)}
-                                    >
-                                        <Text
-                                            style={[
-                                                styles.timeChipText,
-                                                active && styles.timeChipTextActive,
-                                            ]}
-                                        >
-                                            {slot}
-                                        </Text>
-                                    </TouchableOpacity>
-                                );
-                            })}
-                        </View>
-                    )}
-                </View>
-
-                {/* Notes Field */}
-                <View style={styles.fieldContainer}>
-                    <Text style={styles.label}>Catatan Keluhan (Opsional)</Text>
-
-                    <View style={styles.notesBox}>
-                        <TextInput
-                            value={notes}
-                            onChangeText={setNotes}
-                            placeholder="Jelaskan kendala atau servis spesifik yang diinginkan"
-                            placeholderTextColor="#94A3B8"
-                            multiline
-                            style={styles.notesInput}
-                        />
                     </View>
-                </View>
 
-                {/* Submit Button */}
-                <TouchableOpacity
-                    style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
-                    onPress={handleSubmit}
-                    disabled={submitting}
-                    activeOpacity={0.85}
-                >
-                    {submitting ? (
-                        <ActivityIndicator color="#FFFFFF" />
-                    ) : (
-                        <View style={styles.buttonRow}>
-                            <Text style={styles.submitText}>Confirm Booking</Text>
-                            <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
-                        </View>
-                    )}
-                </TouchableOpacity>
-            </ScrollView>
+                    {/* Submit Button */}
+                    <TouchableOpacity
+                        style={[styles.submitButton, submitting && styles.submitButtonDisabled]}
+                        onPress={handleSubmit}
+                        disabled={submitting}
+                        activeOpacity={0.85}
+                    >
+                        {submitting ? (
+                            <ActivityIndicator color="#FFFFFF" />
+                        ) : (
+                            <View style={styles.buttonRow}>
+                                <Text style={styles.submitText}>Confirm Booking</Text>
+                                <Ionicons name="arrow-forward" size={18} color="#FFFFFF" />
+                            </View>
+                        )}
+                    </TouchableOpacity>
+                </ScrollView>
+            </KeyboardAvoidingView>
 
             {/* ===== VEHICLE PICKER MODAL ===== */}
             <Modal
@@ -488,10 +496,10 @@ export function BookingForm() {
                 <Pressable style={styles.modalBackdrop} onPress={closePicker}>
                     <Pressable style={styles.modalSheet}>
                         <View style={styles.modalHandle} />
-                        <Text style={styles.modalTitle}>Pilih Kendaraan</Text>
+                        <Text style={styles.modalTitle}>Select Vehicle</Text>
 
                         {vehicles.length === 0 ? (
-                            <Text style={styles.emptyText}>Belum ada kendaraan terdaftar</Text>
+                            <Text style={styles.emptyText}>There are no added vehicles yet</Text>
                         ) : (
                             <FlatList
                                 data={vehicles}
@@ -538,7 +546,7 @@ export function BookingForm() {
                 <Pressable style={styles.modalBackdrop} onPress={closePicker}>
                     <Pressable style={styles.modalSheet}>
                         <View style={styles.modalHandle} />
-                        <Text style={styles.modalTitle}>Pilih Workshop</Text>
+                        <Text style={styles.modalTitle}>Select Workshop</Text>
 
                         {workshops.length === 0 ? (
                             <Text style={styles.emptyText}>Belum ada workshop tersedia</Text>
@@ -586,6 +594,9 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: "#F8F9FA", // Soft Off-White
+    },
+    flex: {
+        flex: 1,
     },
     header: {
         flexDirection: "row",

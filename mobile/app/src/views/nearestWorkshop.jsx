@@ -170,7 +170,7 @@ export function NearestWorkshop() {
 
             await fetchNearestWorkshops(distance);
         } catch (err) {
-            setError(err.response?.data?.message || 'Gagal memperbarui lokasi');
+            setError(err.response?.data?.message || 'Failed to update location');
             setUpdatingLocation(false);
         }
     };
@@ -214,7 +214,7 @@ export function NearestWorkshop() {
                 <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={10} activeOpacity={0.7}>
                     <Ionicons name="chevron-back-outline" size={24} color="#0F2C59" />
                 </TouchableOpacity>
-                <Text style={styles.title}>Workshop Terdekat</Text>
+                <Text style={styles.title}>Nearest Workshops</Text>
                 <TouchableOpacity
                     style={styles.updateButton}
                     onPress={handleUpdateLocation}
@@ -249,7 +249,7 @@ export function NearestWorkshop() {
                     activeOpacity={0.7}
                 >
                     <Text style={styles.updateLocationTextButtonText}>
-                        {updatingLocation ? 'Memperbarui...' : 'Perbarui lokasi saya'}
+                        {updatingLocation ? 'Updating...' : 'Update my location'}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -320,7 +320,7 @@ export function NearestWorkshop() {
                     onPress={() => setShowDistancePicker(false)}
                 >
                     <View style={styles.modalSheet}>
-                        <Text style={styles.modalTitle}>Pilih Radius</Text>
+                        <Text style={styles.modalTitle}>Choose Radius</Text>
                         {DISTANCE_OPTIONS.map((opt) => (
                             <TouchableOpacity
                                 key={opt.value}

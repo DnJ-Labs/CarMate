@@ -35,17 +35,17 @@ export default function EditProfile() {
     const validate = () => {
         const nextErrors = {};
 
-        if (!name.trim()) nextErrors.name = 'Nama wajib diisi';
-        if (!username.trim()) nextErrors.username = 'Username wajib diisi';
+        if (!name.trim()) nextErrors.name = 'Full name is required';
+        if (!username.trim()) nextErrors.username = 'Username is required';
 
         if (!email.trim()) {
-            nextErrors.email = 'Email wajib diisi';
+            nextErrors.email = 'Email is required';
         } else if (!/^\S+@\S+\.\S+$/.test(email.trim())) {
-            nextErrors.email = 'Format email tidak valid';
+            nextErrors.email = 'Invalid email format';
         }
 
         if (phone && !/^[0-9+\-\s]{6,20}$/.test(phone.trim())) {
-            nextErrors.phone = 'Format nomor telepon tidak valid';
+            nextErrors.phone = 'Invalid phone number format';
         }
 
         setErrors(nextErrors);
@@ -60,7 +60,7 @@ export default function EditProfile() {
 
             const token = await SecureStore.getItemAsync('access_token');
             if (!token) {
-                Alert.alert('Error', 'Sesi habis, silakan login ulang');
+                Alert.alert('Error', 'Session expired, please log in again.');
                 return;
             }
 
@@ -82,7 +82,7 @@ export default function EditProfile() {
                 }
             );
 
-            Alert.alert('Berhasil', 'Profil kamu telah diperbarui.', [
+            Alert.alert('Success', 'Your profile has been updated.', [
                 {
                     text: 'OK',
                     onPress: () => navigation.goBack(),
@@ -92,11 +92,11 @@ export default function EditProfile() {
             const message = err.response?.data?.message;
 
             if (message === 'Username already taken') {
-                setErrors((prev) => ({ ...prev, username: 'Username sudah dipakai' }));
+                setErrors((prev) => ({ ...prev, username: 'Username is already taken' }));
             } else if (message === 'Email already taken') {
-                setErrors((prev) => ({ ...prev, email: 'Email sudah dipakai' }));
+                setErrors((prev) => ({ ...prev, email: 'Email is already taken' }));
             } else {
-                Alert.alert('Gagal', message || 'Gagal memperbarui profil.');
+                Alert.alert('Failed', message || 'Failed to update profile.');
             }
         } finally {
             setSubmitting(false);
@@ -168,7 +168,7 @@ export default function EditProfile() {
                     <Ionicons name="chevron-back-outline" size={22} color="#0F2C59" />
                 </TouchableOpacity>
 
-                <Text style={styles.title}>Edit Profil</Text>
+                <Text style={styles.title}>Edit Profile</Text>
 
                 <View style={styles.headerPlaceholder} />
             </View>
@@ -189,30 +189,30 @@ export default function EditProfile() {
                             <Ionicons name="camera" size={14} color="#FFFFFF" />
                         </View>
                     </View>
-                    <Text style={styles.avatarSubtext}>Perbarui informasi profil Anda</Text>
+                    <Text style={styles.avatarSubtext}>Update your profile information</Text>
                 </View>
 
                 {/* Form Card Container */}
                 <View style={styles.cardForm}>
-                    {renderField('Nama Lengkap', name, setName, 'person-outline', {
+                    {renderField('Full Name', name, setName, 'person-outline', {
                         key: 'name',
-                        placeholder: 'Masukkan nama lengkap',
+                        placeholder: 'Enter your full name',
                     })}
 
                     {renderField('Username', username, setUsername, 'at-outline', {
                         key: 'username',
-                        placeholder: 'Masukkan username',
+                        placeholder: 'Enter username',
                         autoCapitalize: 'none',
                     })}
 
                     {renderField('Email', email, setEmail, 'mail-outline', {
                         key: 'email',
-                        placeholder: 'nama@email.com',
+                        placeholder: 'name@email.com',
                         autoCapitalize: 'none',
                         keyboardType: 'email-address',
                     })}
 
-                    {renderField('Nomor Telepon', phone, setPhone, 'call-outline', {
+                    {renderField('Phone Number', phone, setPhone, 'call-outline', {
                         key: 'phone',
                         placeholder: '08xxxxxxxxxx',
                         keyboardType: 'phone-pad',
@@ -229,7 +229,7 @@ export default function EditProfile() {
                     {submitting ? (
                         <ActivityIndicator color="#FFFFFF" />
                     ) : (
-                        <Text style={styles.saveText}>Simpan Perubahan</Text>
+                        <Text style={styles.saveText}>Save Changes</Text>
                     )}
                 </TouchableOpacity>
             </ScrollView>

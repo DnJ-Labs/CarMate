@@ -9,6 +9,8 @@ import {
     ActivityIndicator,
     Alert,
     Image,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -138,104 +140,111 @@ export function AddVehicle({ navigation }) {
                 <View style={styles.headerPlaceholder} />
             </View>
 
-            <ScrollView
-                contentContainerStyle={styles.content}
-                showsVerticalScrollIndicator={false}
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 24}
+                style={styles.flex}
             >
-                {error && (
-                    <View style={styles.errorBox}>
-                        <Ionicons name="alert-circle-outline" size={18} color="#E53E3E" />
-                        <Text style={styles.errorText}>{error}</Text>
-                    </View>
-                )}
-
-                {/* Foto Kendaraan */}
-                <Text style={styles.label}>FOTO KENDARAAN (OPSIONAL)</Text>
-                <TouchableOpacity
-                    style={styles.imagePicker}
-                    onPress={pickImage}
-                    activeOpacity={0.85}
+                <ScrollView
+                    contentContainerStyle={styles.content}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                 >
-                    {imageUri ? (
-                        <>
-                            <Image source={{ uri: imageUri }} style={styles.previewImage} />
-                            <View style={styles.imageEditBadge}>
-                                <Ionicons name="camera-outline" size={14} color="#FFFFFF" />
-                                <Text style={styles.imageEditBadgeText}>Ganti</Text>
-                            </View>
-                        </>
-                    ) : (
-                        <View style={styles.imagePlaceholder}>
-                            <View style={styles.imagePlaceholderIcon}>
-                                <Ionicons name="camera-outline" size={26} color="#0F2C59" />
-                            </View>
-                            <Text style={styles.imagePlaceholderText}>Pilih Foto</Text>
-                            <Text style={styles.imagePlaceholderSubtext}>
-                                JPG atau PNG, maks 5MB
-                            </Text>
+                    {error && (
+                        <View style={styles.errorBox}>
+                            <Ionicons name="alert-circle-outline" size={18} color="#E53E3E" />
+                            <Text style={styles.errorText}>{error}</Text>
                         </View>
                     )}
-                </TouchableOpacity>
 
-                {/* Form Card */}
-                <View style={styles.formCard}>
-                    <Text style={styles.label}>BRAND</Text>
-                    <View style={styles.inputWrapper}>
-                        <Ionicons name="pricetag-outline" size={17} color="#0F2C59" />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Contoh: Toyota"
-                            placeholderTextColor="#A0AEC0"
-                            value={brand}
-                            onChangeText={setBrand}
-                        />
+                    {/* Foto Kendaraan */}
+                    <Text style={styles.label}>FOTO KENDARAAN (OPSIONAL)</Text>
+                    <TouchableOpacity
+                        style={styles.imagePicker}
+                        onPress={pickImage}
+                        activeOpacity={0.85}
+                    >
+                        {imageUri ? (
+                            <>
+                                <Image source={{ uri: imageUri }} style={styles.previewImage} />
+                                <View style={styles.imageEditBadge}>
+                                    <Ionicons name="camera-outline" size={14} color="#FFFFFF" />
+                                    <Text style={styles.imageEditBadgeText}>Ganti</Text>
+                                </View>
+                            </>
+                        ) : (
+                            <View style={styles.imagePlaceholder}>
+                                <View style={styles.imagePlaceholderIcon}>
+                                    <Ionicons name="camera-outline" size={26} color="#0F2C59" />
+                                </View>
+                                <Text style={styles.imagePlaceholderText}>Pilih Foto</Text>
+                                <Text style={styles.imagePlaceholderSubtext}>
+                                    JPG atau PNG, maks 5MB
+                                </Text>
+                            </View>
+                        )}
+                    </TouchableOpacity>
+
+                    {/* Form Card */}
+                    <View style={styles.formCard}>
+                        <Text style={styles.label}>BRAND</Text>
+                        <View style={styles.inputWrapper}>
+                            <Ionicons name="pricetag-outline" size={17} color="#0F2C59" />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Contoh: Toyota"
+                                placeholderTextColor="#A0AEC0"
+                                value={brand}
+                                onChangeText={setBrand}
+                            />
+                        </View>
+
+                        <Text style={styles.label}>MODEL</Text>
+                        <View style={styles.inputWrapper}>
+                            <Ionicons name="car-sport-outline" size={17} color="#0F2C59" />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Contoh: Avanza"
+                                placeholderTextColor="#A0AEC0"
+                                value={model}
+                                onChangeText={setModel}
+                            />
+                        </View>
+
+                        <Text style={styles.label}>PLAT NOMOR</Text>
+                        <View style={styles.inputWrapper}>
+                            <Ionicons name="card-outline" size={17} color="#0F2C59" />
+                            <TextInput
+                                style={styles.input}
+                                placeholder="Contoh: B 1234 ABC"
+                                placeholderTextColor="#A0AEC0"
+                                value={plateNumber}
+                                onChangeText={setPlateNumber}
+                                autoCapitalize="characters"
+                            />
+                        </View>
                     </View>
 
-                    <Text style={styles.label}>MODEL</Text>
-                    <View style={styles.inputWrapper}>
-                        <Ionicons name="car-sport-outline" size={17} color="#0F2C59" />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Contoh: Avanza"
-                            placeholderTextColor="#A0AEC0"
-                            value={model}
-                            onChangeText={setModel}
-                        />
-                    </View>
-
-                    <Text style={styles.label}>PLAT NOMOR</Text>
-                    <View style={styles.inputWrapper}>
-                        <Ionicons name="card-outline" size={17} color="#0F2C59" />
-                        <TextInput
-                            style={styles.input}
-                            placeholder="Contoh: B 1234 ABC"
-                            placeholderTextColor="#A0AEC0"
-                            value={plateNumber}
-                            onChangeText={setPlateNumber}
-                            autoCapitalize="characters"
-                        />
-                    </View>
-                </View>
-
-                <TouchableOpacity
-                    style={[
-                        styles.submitButton,
-                        (loading || uploading) && styles.submitButtonDisabled,
-                    ]}
-                    onPress={handleSubmit}
-                    disabled={loading || uploading}
-                    activeOpacity={0.85}
-                >
-                    {loading || uploading ? (
-                        <ActivityIndicator size="small" color="#FFFFFF" />
-                    ) : (
-                        <>
-                            <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
-                            <Text style={styles.submitText}>Simpan Kendaraan</Text>
-                        </>
-                    )}
-                </TouchableOpacity>
-            </ScrollView>
+                    <TouchableOpacity
+                        style={[
+                            styles.submitButton,
+                            (loading || uploading) && styles.submitButtonDisabled,
+                        ]}
+                        onPress={handleSubmit}
+                        disabled={loading || uploading}
+                        activeOpacity={0.85}
+                    >
+                        {loading || uploading ? (
+                            <ActivityIndicator size="small" color="#FFFFFF" />
+                        ) : (
+                            <>
+                                <Ionicons name="checkmark-circle-outline" size={18} color="#FFFFFF" />
+                                <Text style={styles.submitText}>Simpan Kendaraan</Text>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 }
@@ -244,6 +253,10 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#F0F2F5', // Light Cool Grey
+    },
+
+    flex: {
+        flex: 1,
     },
 
     header: {

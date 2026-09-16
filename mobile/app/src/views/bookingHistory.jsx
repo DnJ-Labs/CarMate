@@ -1,11 +1,14 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useCallback, useState, useEffect, useMemo } from "react";
 import {
   ActivityIndicator,
   FlatList,
+  Modal,
   RefreshControl,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
+  TouchableWithoutFeedback,
   View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
@@ -37,6 +40,15 @@ const STATUS_STYLES = {
   cancelled: { bg: "#FEECEC", text: "#E53E3E" },
 };
 
+// Order & labels used for the summary stat cards + filter chips
+const STATUS_FILTERS = [
+  { key: "confirmed", label: "Confirmed" },
+  { key: "checked_in", label: "Checked In" },
+  { key: "onprogress", label: "On Progress" },
+  { key: "done", label: "Done" },
+  { key: "cancelled", label: "Cancelled" },
+];
+
 const TAB_BAR_HEIGHT = 100; // kira-kira tinggi tab bar floating + jarak amannya
 
 export default function BookingHistory() {
@@ -45,6 +57,8 @@ export default function BookingHistory() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState(null); // null = All
+  const [filterDropdownVisible, setFilterDropdownVisible] = useState(false);
 
   const listBottomPadding = TAB_BAR_HEIGHT + insets.bottom;
 
@@ -176,6 +190,26 @@ export default function BookingHistory() {
     return `Rp ${Number(price).toLocaleString("id-ID")}`;
   };
 
+  // Count bookings per status, used by the summary stat cards
+  const statusCounts = useMemo(() => {
+    const counts = {};
+    STATUS_FILTERS.forEach((s) => {
+      counts[s.key] = 0;
+    });
+    bookings.forEach((b) => {
+      if (counts[b.status] !== undefined) {
+        counts[b.status] += 1;
+      }
+    });
+    return counts;
+  }, [bookings]);
+
+  // Apply the selected status filter to the list
+  const filteredBookings = useMemo(() => {
+    if (!statusFilter) return bookings;
+    return bookings.filter((b) => b.status === statusFilter);
+  }, [bookings, statusFilter]);
+
   const renderBooking = ({ item }) => {
     const statusStyle = getStatusStyle(item.status);
 
@@ -269,14 +303,120 @@ export default function BookingHistory() {
         <Text style={styles.subtitle}>View your service bookings</Text>
       </View>
 
+      {/* ===== SUMMARY STAT CARD (per status count) ===== */}
+      <View style={styles.statsCard}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.statsScrollContent}
+        >
+          {STATUS_FILTERS.map((s, index) => (
+            <React.Fragment key={s.key}>
+              <View style={styles.statItem}>
+                <Text style={styles.statValue}>{statusCounts[s.key]}</Text>
+                <Text style={styles.statLabel}>{s.label}</Text>
+              </View>
+              {index < STATUS_FILTERS.length - 1 && (
+                <View style={styles.statDivider} />
+              )}
+            </React.Fragment>
+          ))}
+        </ScrollView>
+      </View>
+
+      {/* ===== FILTER BY STATUS (dropdown) ===== */}
+      <View style={styles.filterWrapper}>
+        <TouchableOpacity
+          style={styles.filterDropdownButton}
+          onPress={() => setFilterDropdownVisible(true)}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="filter-outline" size={16} color={COLORS.accent} />
+          <Text style={styles.filterDropdownText}>
+            {statusFilter
+              ? STATUS_FILTERS.find((s) => s.key === statusFilter)?.label
+              : "All Status"}
+          </Text>
+          <Ionicons name="chevron-down" size={16} color={COLORS.textMuted} />
+        </TouchableOpacity>
+      </View>
+
+      <Modal
+        visible={filterDropdownVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setFilterDropdownVisible(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setFilterDropdownVisible(false)}>
+          <View style={styles.dropdownOverlay}>
+            <TouchableWithoutFeedback>
+              <View style={styles.dropdownMenu}>
+                <TouchableOpacity
+                  style={styles.dropdownItem}
+                  onPress={() => {
+                    setStatusFilter(null);
+                    setFilterDropdownVisible(false);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <Text
+                    style={[
+                      styles.dropdownItemText,
+                      !statusFilter && styles.dropdownItemTextActive,
+                    ]}
+                  >
+                    All Status
+                  </Text>
+                  {!statusFilter && (
+                    <Ionicons name="checkmark" size={18} color={COLORS.accent} />
+                  )}
+                </TouchableOpacity>
+
+                {STATUS_FILTERS.map((s) => {
+                  const isActive = statusFilter === s.key;
+                  return (
+                    <View key={s.key} style={styles.dropdownDivider}>
+                      <TouchableOpacity
+                        style={styles.dropdownItem}
+                        onPress={() => {
+                          setStatusFilter(s.key);
+                          setFilterDropdownVisible(false);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text
+                          style={[
+                            styles.dropdownItemText,
+                            isActive && styles.dropdownItemTextActive,
+                          ]}
+                        >
+                          {s.label}
+                        </Text>
+                        {isActive && (
+                          <Ionicons
+                            name="checkmark"
+                            size={18}
+                            color={COLORS.accent}
+                          />
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  );
+                })}
+              </View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
       <FlatList
-        data={bookings}
+        data={filteredBookings}
         keyExtractor={(item) => item._id}
         renderItem={renderBooking}
         contentContainerStyle={[
           styles.contentContainer,
           { paddingBottom: listBottomPadding },
-          bookings.length === 0 && styles.emptyContent,
+          filteredBookings.length === 0 && styles.emptyContent,
         ]}
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -295,9 +435,13 @@ export default function BookingHistory() {
                 color={COLORS.textMuted}
               />
             </View>
-            <Text style={styles.emptyTitle}>No bookings yet</Text>
+            <Text style={styles.emptyTitle}>
+              {statusFilter ? "No bookings found" : "No bookings yet"}
+            </Text>
             <Text style={styles.emptyText}>
-              Your booking history will appear here.
+              {statusFilter
+                ? "Try selecting a different status filter."
+                : "Your booking history will appear here."}
             </Text>
           </View>
         }
@@ -322,7 +466,7 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 20,
+    paddingBottom: 16,
     backgroundColor: COLORS.background,
   },
 
@@ -336,6 +480,124 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: COLORS.textMuted,
     marginTop: 4,
+  },
+
+  /* Summary Stat Card */
+  statsCard: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    shadowColor: "#64748B",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    elevation: 4,
+  },
+
+  statsScrollContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 8,
+  },
+
+  statItem: {
+    alignItems: "center",
+    justifyContent: "center",
+    minWidth: 84,
+  },
+
+  statValue: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: COLORS.textDark,
+    marginBottom: 4,
+  },
+
+  statLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: COLORS.textMuted,
+    textAlign: "center",
+  },
+
+  statDivider: {
+    width: 1,
+    height: 32,
+    backgroundColor: "#E2E8F0",
+  },
+
+  /* Filter dropdown */
+  filterWrapper: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+
+  filterDropdownButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start",
+    gap: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: COLORS.surface,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+  },
+
+  filterDropdownText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: COLORS.textDark,
+  },
+
+  dropdownOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(15,23,42,0.35)",
+    justifyContent: "flex-start",
+    alignItems: "flex-start",
+    paddingTop: 170,
+    paddingLeft: 20,
+  },
+
+  dropdownMenu: {
+    width: 200,
+    backgroundColor: COLORS.surface,
+    borderRadius: 16,
+    paddingVertical: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+
+  dropdownDivider: {
+    borderTopWidth: 1,
+    borderTopColor: "#F1F5F9",
+  },
+
+  dropdownItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+
+  dropdownItemText: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: COLORS.textDark,
+  },
+
+  dropdownItemTextActive: {
+    fontWeight: "700",
+    color: COLORS.accent,
   },
 
   contentContainer: {

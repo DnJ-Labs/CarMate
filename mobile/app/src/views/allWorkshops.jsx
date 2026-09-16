@@ -316,7 +316,7 @@ export function Workshop() {
         >
           <Ionicons name="navigate-outline" size={15} color="#FFFFFF" />
 
-          <Text style={styles.nearestButtonText}>Terdekat</Text>
+          <Text style={styles.nearestButtonText}>Nearest</Text>
         </TouchableOpacity>
       </View>
 
@@ -338,7 +338,7 @@ export function Workshop() {
           onChangeText={setSearch}
           onFocus={() => setIsSearchFocused(true)}
           onBlur={() => setIsSearchFocused(false)}
-          placeholder="Cari nama workshop..."
+          placeholder="Search for the workshop name..."
           placeholderTextColor="#94A3B8"
           style={styles.searchInput}
           returnKeyType="search"
