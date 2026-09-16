@@ -79,13 +79,13 @@ export function Register() {
                                 <Ionicons
                                     name="person-outline"
                                     size={18}
-                                    color="#8b8b8b"
+                                    color="#0F2C59"
                                     style={styles.inputIcon}
                                 />
                                 <TextInput
                                     style={styles.input}
                                     placeholder="Nama lengkap"
-                                    placeholderTextColor="#a3a3a3"
+                                    placeholderTextColor="#a3aab8"
                                     value={fullName}
                                     onChangeText={setFullName}
                                 />
@@ -95,13 +95,13 @@ export function Register() {
                                 <Ionicons
                                     name="at-outline"
                                     size={18}
-                                    color="#8b8b8b"
+                                    color="#0F2C59"
                                     style={styles.inputIcon}
                                 />
                                 <TextInput
                                     style={styles.input}
                                     placeholder="Username"
-                                    placeholderTextColor="#a3a3a3"
+                                    placeholderTextColor="#a3aab8"
                                     autoCapitalize="none"
                                     value={username}
                                     onChangeText={setUsername}
@@ -112,13 +112,13 @@ export function Register() {
                                 <Ionicons
                                     name="call-outline"
                                     size={18}
-                                    color="#8b8b8b"
+                                    color="#0F2C59"
                                     style={styles.inputIcon}
                                 />
                                 <TextInput
                                     style={styles.input}
                                     placeholder="Nomor telepon"
-                                    placeholderTextColor="#a3a3a3"
+                                    placeholderTextColor="#a3aab8"
                                     keyboardType="phone-pad"
                                     value={phone}
                                     onChangeText={setPhone}
@@ -129,13 +129,13 @@ export function Register() {
                                 <Ionicons
                                     name="mail-outline"
                                     size={18}
-                                    color="#8b8b8b"
+                                    color="#0F2C59"
                                     style={styles.inputIcon}
                                 />
                                 <TextInput
                                     style={styles.input}
                                     placeholder="Email"
-                                    placeholderTextColor="#a3a3a3"
+                                    placeholderTextColor="#a3aab8"
                                     autoCapitalize="none"
                                     keyboardType="email-address"
                                     value={email}
@@ -147,13 +147,13 @@ export function Register() {
                                 <Ionicons
                                     name="lock-closed-outline"
                                     size={18}
-                                    color="#8b8b8b"
+                                    color="#0F2C59"
                                     style={styles.inputIcon}
                                 />
                                 <TextInput
                                     style={[styles.input, styles.inputWithToggle]}
                                     placeholder="Password"
-                                    placeholderTextColor="#a3a3a3"
+                                    placeholderTextColor="#a3aab8"
                                     secureTextEntry={!showPassword}
                                     value={password}
                                     onChangeText={setPassword}
@@ -165,7 +165,7 @@ export function Register() {
                                     <Ionicons
                                         name={showPassword ? 'eye-off-outline' : 'eye-outline'}
                                         size={18}
-                                        color="#8b8b8b"
+                                        color="#8a93a6"
                                     />
                                 </TouchableOpacity>
                             </View>
@@ -203,7 +203,7 @@ export function Register() {
                             </TouchableOpacity>
 
                             <TouchableOpacity style={styles.socialButton}>
-                                <Ionicons name="logo-apple" size={20} color="#000" />
+                                <Ionicons name="logo-apple" size={20} color="#0F2C59" />
                                 <Text style={styles.socialButtonText}>Sign up with Apple</Text>
                             </TouchableOpacity>
                         </View>
@@ -222,7 +222,7 @@ export function Register() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#fff' },
+    container: { flex: 1, backgroundColor: '#F8F9FA' },
     flex: { flex: 1 },
     closeButton: {
         paddingHorizontal: 24,
@@ -233,33 +233,43 @@ const styles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingBottom: 24,
         flexGrow: 1,
+        justifyContent: 'center',
     },
     title: {
         fontSize: 28,
         fontWeight: '700',
-        color: '#111',
+        color: '#0F2C59',
         marginTop: 12,
         marginBottom: 24,
     },
     form: { width: '100%' },
+
+    // Neumorphic soft-inset input field: light off-white surface,
+    // soft ambient shadow instead of a hard border, large rounded corners.
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#fff',
+        backgroundColor: '#F0F2F5',
         borderWidth: 1,
-        borderColor: '#e5e5e5',
-        borderRadius: 12,
-        paddingHorizontal: 14,
+        borderColor: '#FFFFFF',
+        borderRadius: 18,
+        paddingHorizontal: 16,
         marginBottom: 12,
+
+        shadowColor: '#A3B1C6',
+        shadowOffset: { width: 3, height: 3 },
+        shadowOpacity: 0.35,
+        shadowRadius: 6,
+        elevation: 2,
     },
     inputIcon: {
-        marginRight: 8,
+        marginRight: 10,
     },
     input: {
         flex: 1,
         paddingVertical: 14,
         fontSize: 14,
-        color: '#111',
+        color: '#0F2C59',
     },
     inputWithToggle: {
         paddingRight: 8,
@@ -269,56 +279,76 @@ const styles = StyleSheet.create({
     },
     terms: {
         fontSize: 12,
-        color: '#8b8b8b',
+        color: '#8a93a6',
         lineHeight: 18,
         marginTop: 4,
         marginBottom: 20,
     },
     termsLink: {
-        color: '#5b5be0',
+        color: '#0F2C59',
         fontWeight: '600',
     },
     errorContainer: {
-        backgroundColor: '#fdecec',
+        backgroundColor: '#FBEEEE',
         borderWidth: 1,
-        borderColor: '#f5c2c2',
-        borderRadius: 8,
-        paddingHorizontal: 12,
+        borderColor: '#F3D3D3',
+        borderRadius: 16,
+        paddingHorizontal: 14,
         paddingVertical: 10,
         marginBottom: 16,
     },
     errorText: {
-        color: '#d13c3c',
+        color: '#C0392B',
         fontSize: 13,
         textAlign: 'center',
         lineHeight: 18,
     },
+
+    // Neumorphic "raised" primary button: navy fill with soft ambient
+    // shadow so it reads as gently embossed rather than flat.
     registerButton: {
-        backgroundColor: '#5b5be0',
-        borderRadius: 12,
-        paddingVertical: 15,
+        backgroundColor: '#0F2C59',
+        borderRadius: 20,
+        paddingVertical: 16,
         alignItems: 'center',
         justifyContent: 'center',
         marginBottom: 14,
-        minHeight: 50,
+        minHeight: 52,
+
+        shadowColor: '#0F2C59',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.25,
+        shadowRadius: 10,
+        elevation: 4,
     },
-    registerButtonText: { color: '#fff', fontWeight: '600', fontSize: 15 },
+    registerButtonText: {
+        color: '#fff',
+        fontWeight: '600',
+        fontSize: 15,
+        letterSpacing: 0.3,
+    },
     socialButton: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
         borderWidth: 1,
-        borderColor: '#e5e5e5',
-        borderRadius: 12,
+        borderColor: '#FFFFFF',
+        backgroundColor: '#F0F2F5',
+        borderRadius: 18,
         paddingVertical: 14,
         marginBottom: 12,
-        backgroundColor: '#fff',
+
+        shadowColor: '#A3B1C6',
+        shadowOffset: { width: 3, height: 3 },
+        shadowOpacity: 0.3,
+        shadowRadius: 6,
+        elevation: 2,
     },
     socialButtonText: {
         marginLeft: 10,
         fontSize: 14,
         fontWeight: '600',
-        color: '#111',
+        color: '#0F2C59',
     },
     loginRow: {
         flexDirection: 'row',
@@ -326,6 +356,6 @@ const styles = StyleSheet.create({
         marginTop: 8,
         paddingBottom: 12,
     },
-    loginText: { fontSize: 14, color: '#6b6b6b' },
-    loginLink: { fontSize: 14, color: '#5b5be0', fontWeight: '700' },
+    loginText: { fontSize: 14, color: '#8a93a6' },
+    loginLink: { fontSize: 14, color: '#0F2C59', fontWeight: '700' },
 });

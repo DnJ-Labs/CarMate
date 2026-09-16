@@ -22,13 +22,13 @@ import axios from "axios";
 import baseUrl from "../../constant/baseUrl";
 
 const DAY_LABELS = {
-    sunday: "Minggu",
-    monday: "Senin",
-    tuesday: "Selasa",
-    wednesday: "Rabu",
-    thursday: "Kamis",
-    friday: "Jumat",
-    saturday: "Sabtu",
+    sunday: "Sunday",
+    monday: "Monday",
+    tuesday: "Tuesday",
+    wednesday: "Wednesday",
+    thursday: "Thursday",
+    friday: "Friday",
+    saturday: "Saturday",
 };
 
 const DAY_ORDER = [
@@ -99,7 +99,7 @@ function WorkshopDetailContent() {
             const token = await SecureStore.getItemAsync("access_token");
 
             if (!token) {
-                setError("Sesi habis, silakan login ulang");
+                setError("Session expired, please log in again.");
                 return;
             }
 
@@ -116,7 +116,7 @@ function WorkshopDetailContent() {
         } catch (err) {
             if (!initialWorkshop) {
                 setError(
-                    err.response?.data?.message || "Gagal mengambil detail workshop",
+                    err.response?.data?.message || "Failed to fetch workshop details",
                 );
             }
         } finally {
@@ -201,7 +201,7 @@ function WorkshopDetailContent() {
                 <View style={styles.centerContent}>
                     <Ionicons name="alert-circle-outline" size={44} color="#E53E3E" />
                     <Text style={styles.errorText}>
-                        {error || "Workshop tidak ditemukan"}
+                        {error || "Workshop not found"}
                     </Text>
                 </View>
             </SafeAreaView>
@@ -222,7 +222,7 @@ function WorkshopDetailContent() {
                     <Ionicons name="chevron-back" size={20} color="#0F2C59" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle} numberOfLines={1}>
-                    Detail Workshop
+                    Workshop Details
                 </Text>
                 <View style={{ width: 38 }} />
             </View>
@@ -232,7 +232,7 @@ function WorkshopDetailContent() {
                 contentContainerStyle={{ paddingBottom: 90 }}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Image Banner dengan Ukuran Lebih Tinggi */}
+                {/* Image Banner */}
                 {workshop.workshop_img ? (
                     <Image
                         source={{ uri: workshop.workshop_img }}
@@ -265,7 +265,7 @@ function WorkshopDetailContent() {
                                         : styles.statusBadgeTextInactive,
                                 ]}
                             >
-                                {workshop.is_active ? "Buka" : "Tutup"}
+                                {workshop.is_active ? "Open" : "Closed"}
                             </Text>
                         </View>
                     </View>
@@ -288,14 +288,14 @@ function WorkshopDetailContent() {
                         <View style={styles.infoCard}>
                             <Ionicons name="people" size={18} color="#0F2C59" />
                             <Text style={styles.infoCardText}>
-                                Kapasitas <Text style={{ fontWeight: "700" }}>{workshop.max_slot_per_day} slot</Text> booking per hari
+                                Capacity of <Text style={{ fontWeight: "700" }}>{workshop.max_slot_per_day} booking slots</Text> per day
                             </Text>
                         </View>
                     )}
 
                     {sortedHours.length > 0 && (
                         <View style={styles.hoursCard}>
-                            <Text style={styles.sectionTitle}>Jam Operasional</Text>
+                            <Text style={styles.sectionTitle}>Operational Hours</Text>
 
                             {sortedHours.map(({ day, schedule }) => {
                                 const isToday = day === todayKey;
@@ -313,7 +313,7 @@ function WorkshopDetailContent() {
                                                 isToday && styles.hoursDayToday,
                                             ]}
                                         >
-                                            {DAY_LABELS[day] ?? day} {isToday ? "(Hari Ini)" : ""}
+                                            {DAY_LABELS[day] ?? day} {isToday ? "(Today)" : ""}
                                         </Text>
 
                                         <Text
@@ -324,7 +324,7 @@ function WorkshopDetailContent() {
                                         >
                                             {schedule
                                                 ? `${schedule.open} - ${schedule.close}`
-                                                : "Tutup"}
+                                                : "Closed"}
                                         </Text>
                                     </View>
                                 );
@@ -355,7 +355,7 @@ function WorkshopDetailContent() {
                     }
                 >
                     <Text style={styles.bookingButtonText}>
-                        {workshop.is_active ? "Booking Sekarang" : "Workshop Tutup"}
+                        {workshop.is_active ? "Book Now" : "Workshop Closed"}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -419,7 +419,6 @@ const styles = StyleSheet.create({
         backgroundColor: "#FFFFFF",
     },
 
-    /* Gambar Dibuat Lebih Tinggi (280) */
     image: {
         width: "100%",
         height: 280,
